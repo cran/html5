@@ -2,90 +2,28 @@
 % Please edit documentation in R/html5.R
 \name{b}
 \alias{b}
-\title{Generate HTML tag for element b}
+\title{Generate the <b> HTML tag.}
 \usage{
-b(
-  ...,
-  accesskey = NULL,
-  autocapitalize = NULL,
-  class = NULL,
-  contenteditable = NULL,
-  dir = NULL,
-  draggable = NULL,
-  hidden = NULL,
-  id = NULL,
-  inputmode = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  part = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  style = NULL,
-  tabindex = NULL,
-  title = NULL,
-  custom_attr = NULL
-)
+b(..., attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{...}{A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.}
+\item{...}{A string or vector of content to pass to the tag.}
 
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element b
+The <b> HTML element is used to draw the reader's attention to the element's contents, which are not otherwise granted special importance. This was formerly known as the Boldface element, and most browsers still draw the text in boldface. However, you should not use <b> for styling text; instead, you should use the CSS font-weight property to create boldface text, or the strong element to indicate that text is of special importance.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/b}.
 }
 \examples{
-b(class = "test", "Example")
+b(attr = list(class = "test"))
 }

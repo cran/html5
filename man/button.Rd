@@ -2,123 +2,28 @@
 % Please edit documentation in R/html5.R
 \name{button}
 \alias{button}
-\title{Generate HTML tag for element button}
+\title{Generate the <button> HTML tag.}
 \usage{
-button(
-  ...,
-  accesskey = NULL,
-  autocapitalize = NULL,
-  autofocus = NULL,
-  class = NULL,
-  contenteditable = NULL,
-  dir = NULL,
-  disabled = NULL,
-  draggable = NULL,
-  form = NULL,
-  formaction = NULL,
-  formenctype = NULL,
-  formmethod = NULL,
-  formnovalidate = NULL,
-  formtarget = NULL,
-  hidden = NULL,
-  id = NULL,
-  inputmode = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  name = NULL,
-  part = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  style = NULL,
-  tabindex = NULL,
-  title = NULL,
-  type = NULL,
-  value = NULL,
-  custom_attr = NULL
-)
+button(..., attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{...}{A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.}
+\item{...}{A string or vector of content to pass to the tag.}
 
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
-\item{autofocus}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{disabled}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{form}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formaction}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formenctype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formmethod}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formnovalidate}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formtarget}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{name}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{type}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{value}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element button
+The <button> HTML element represents a clickable button, used to submit forms or anywhere in a document for accessible, standard button functionality.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button}.
 }
 \examples{
-button(class = "test", "Example")
+button(attr = list(class = "test"))
 }

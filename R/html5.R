@@ -1,8273 +1,2013 @@
-#' Generate HTML string with properly declared DOCTYPE.
+# boolean_attributes <- c(
+#   "allowfullscreen",
+#   "allowpaymentrequest",
+#   "async",
+#   "autofocus",
+#   "autoplay",
+#   "checked",
+#   "controls",
+#   "default",
+#   "defer",
+#   "disabled",
+#   "formnovalidate",
+#   "hidden",
+#   "ismap",
+#   "itemscope",
+#   "loop",
+#   "multiple",
+#   "muted",
+#   "nomodule",
+#   "novalidate",
+#   "open",
+#   "playsinline",
+#   "readonly",
+#   "required",
+#   "reversed",
+#   "selected",
+#   "truespeed"
+# )
+# save(boolean_attributes, file = "/home//r_packages/html5/R/sysdata.rda")
+
+#' Vector of boolean attributes
+#'
+#' @description A vector of boolean attributes
+#' @format A vector
+"boolean_attributes"
+
+#' Helper function to generate HTML5 attribute strings
+#'
+#' @param attr A named list, names are attribute names and values are attribute values.
+#' If the items of the list and the items of the tag content are longer than length 1,
+#' the items for the attribute will correspond with the items of the content in the same position.
+#' For example, when generating a series of option tags, you might want to pass a different id attribute for each
+#' item of the content, you can pass the vector of ids in the named list of attributes.
+#' If an attribute is a boolean attribute and the value is the R FALSE value, the boolean attribute will not be
+#' added.
+#' @param separate TRUE/FALSE, if TRUE, returns a vector for creating multiple tags at once.
+#' @return A HTML tag string.
+#' @examples
+#' attr_helper(attr = list(class = 'test'))
+attr_helper <- function (attr, separate = FALSE){
+  if(separate){
+    attr_names <- names(attr)
+    attr <- lapply(attr_names, function(x){
+      if(x %in% boolean_attributes){
+        i <- rep_len(x, length(attr[[x]]))
+        i[attr[[x]] == FALSE] <- ""
+        return(i)
+      }else{
+        return(paste0(x, "=", paste0('"', attr[[x]], '"')))
+      }
+    })
+    i <- seq_len(length(attr))
+    return(eval(str2expression(paste0("paste0(", paste0("attr[[", i, "]]", collapse = ", \" \", "), ")"))))
+  }else{
+    attr_names <- names(attr)
+    attr <- attr[!(attr_names %in% boolean_attributes & attr == FALSE)]
+    return(paste0(names(attr), "=", paste0("\"", attr, "\""), collapse = " "))
+  }
+}
+
+#' Helper function to generate HTML5 strings
+#'
+#' @param ... A string or strings or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE. If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param accepts_content TRUE/FALSE, if FALSE, does not include any content or end tag (ex: the input tag).
+#' @param tag A string. The HTML5 tag to return.
+#' @return A HTML tag string.
+#' @examples
+#' tag_helper(attr = list(class = 'test'), tag = 'a')
+tag_helper <- function (..., attr = NULL, separate = FALSE, collapse = "", accepts_content = TRUE, tag)
+{
+  return(if (accepts_content) {
+    if (separate) {
+      if (is.null(attr)) {
+        paste0("<", tag, ">", c(...), "</", tag, ">", collapse = collapse)
+      } else {
+        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", c(...), "</", tag, ">", collapse = collapse)
+      }
+    } else {
+      if (is.null(attr)) {
+        paste0("<", tag, ">", ..., "</", tag, ">", collapse = collapse)
+      } else {
+        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", ..., "</", tag, ">", collapse = collapse)
+      }
+    }
+  } else {
+    if (separate) {
+      if (is.null(attr)) {
+        paste0("<", tag, ">", collapse = collapse)
+      } else {
+        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
+      }
+    } else {
+      if (is.null(attr)) {
+        paste0("<", tag, ">", collapse = collapse)
+      } else {
+        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
+      }
+    }
+  })
+}
+
+#' Generate HTML document string with properly declared DOCTYPE.
 #'
 #' @param ... A string or strings of HTML element tags.
 #' @param doctype A string declaring the DOCTYPE for the HTML content.
 #' @return A HTML document string.
-html_doc <- function(..., doctype = "html"){
-  return(paste0("<!DOCTYPE ", doctype, ">", ...))  
+doctype <- function (..., doctype = "html")
+{
+  return(paste0("<!DOCTYPE ", doctype, ">", ...))
 }
 
-#' Generate HTML tag for element a
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param download A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param href A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hreflang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param ping A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param referrerpolicy A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param rel A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param target A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @return A HTML tag string.
-#' @examples
-#' a(class = "test", "Example")
-a <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-download = NULL,
-draggable = NULL,
-hidden = NULL,
-href = NULL,
-hreflang = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-ping = NULL,
-referrerpolicy = NULL,
-rel = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-target = NULL,
-title = NULL,
-type = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "download" = download, "draggable" = draggable, "hidden" = hidden, "href" = href, "hreflang" = hreflang, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "ping" = ping, "referrerpolicy" = referrerpolicy, "rel" = rel, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "target" = target, "title" = title, "type" = type, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<a ", attrs, ">")
-x <- paste0(s_tag, ..., "</a>")
-}else{
-x <- paste0("<a>", ..., "</a>")
-}
-return(x)
-}
-
-#' Generate HTML tag for element abbr
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @return A HTML tag string.
-#' @examples
-#' abbr(class = "test", "Example")
-abbr <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<abbr ", attrs, ">")
-x <- paste0(s_tag, ..., "</abbr>")
-}else{
-x <- paste0("<abbr>", ..., "</abbr>")
-}
-return(x)
-}
-
-#' Generate HTML tag for element address
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <a> HTML tag.
+#'
+#' The <a> HTML element (or anchor element), with its href attribute, creates a hyperlink to web pages, files, email addresses, locations in the same page, or anything else a URL can address.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' address(class = "test", "Example")
-address <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<address ", attrs, ">")
-x <- paste0(s_tag, ..., "</address>")
-}else{
-x <- paste0("<address>", ..., "</address>")
-}
-return(x)
+#' a(attr = list(class = "test"))
+a <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'a'))
 }
 
-#' Generate HTML tag for element area
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param alt A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param coords A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param download A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param href A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hreflang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param ping A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param referrerpolicy A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param rel A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param shape A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param target A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <abbr> HTML tag.
+#'
+#' The <abbr> HTML element represents an abbreviation or acronym; the optional title attribute can provide an expansion or description for the abbreviation. If present, title must contain this full description and nothing else.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' area(class = "test")
-area <- function(
-accesskey = NULL,
-alt = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-coords = NULL,
-dir = NULL,
-download = NULL,
-draggable = NULL,
-hidden = NULL,
-href = NULL,
-hreflang = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-ping = NULL,
-referrerpolicy = NULL,
-rel = NULL,
-shape = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-target = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "alt" = alt, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "coords" = coords, "dir" = dir, "download" = download, "draggable" = draggable, "hidden" = hidden, "href" = href, "hreflang" = hreflang, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "ping" = ping, "referrerpolicy" = referrerpolicy, "rel" = rel, "shape" = shape, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "target" = target, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<area ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<area>"
+#' abbr(attr = list(class = "test"))
+abbr <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'abbr'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element article
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <address> HTML tag.
+#'
+#' The <address> HTML element indicates that the enclosed HTML provides contact information for a person or people, or for an organization.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/address}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' article(class = "test", "Example")
-article <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<article ", attrs, ">")
-x <- paste0(s_tag, ..., "</article>")
-}else{
-x <- paste0("<article>", ..., "</article>")
+#' address(attr = list(class = "test"))
+address <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'address'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element aside
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <area> HTML tag.
+#'
+#' The <area> HTML element defines an area inside an image map that has predefined clickable areas. An image map allows geometric areas on an image to be associated with Hyperlink.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' aside(class = "test", "Example")
-aside <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<aside ", attrs, ">")
-x <- paste0(s_tag, ..., "</aside>")
-}else{
-x <- paste0("<aside>", ..., "</aside>")
-}
-return(x)
+#' area(attr = list(class = "test"))
+area <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'area'))
 }
 
-#' Generate HTML tag for element audio
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autoplay A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param controls A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param crossorigin A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param currentTime A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disableRemotePlayback A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param duration A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param loop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param muted A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param preload A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <article> HTML tag.
+#'
+#' The <article> HTML element represents a self-contained composition in a document, page, application, or site, which is intended to be independently distributable or reusable (e.g., in syndication). Examples include: a forum post, a magazine or newspaper article, or a blog entry, a product card, a user-submitted comment, an interactive widget or gadget, or any other independent item of content.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/article}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' audio(class = "test", "Example")
-audio <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-autoplay = NULL,
-class = NULL,
-contenteditable = NULL,
-controls = NULL,
-crossorigin = NULL,
-currentTime = NULL,
-dir = NULL,
-disableRemotePlayback = NULL,
-draggable = NULL,
-duration = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-loop = NULL,
-muted = NULL,
-part = NULL,
-preload = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "autoplay" = autoplay, "class" = class, "contenteditable" = contenteditable, "controls" = controls, "crossorigin" = crossorigin, "currentTime" = currentTime, "dir" = dir, "disableRemotePlayback" = disableRemotePlayback, "draggable" = draggable, "duration" = duration, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "loop" = loop, "muted" = muted, "part" = part, "preload" = preload, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<audio ", attrs, ">")
-x <- paste0(s_tag, ..., "</audio>")
-}else{
-x <- paste0("<audio>", ..., "</audio>")
+#' article(attr = list(class = "test"))
+article <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'article'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element b
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <aside> HTML tag.
+#'
+#' The <aside> HTML element represents a portion of a document whose content is only indirectly related to the document's main content. Asides are frequently presented as sidebars or call-out boxes.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/aside}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' b(class = "test", "Example")
-b <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<b ", attrs, ">")
-x <- paste0(s_tag, ..., "</b>")
-}else{
-x <- paste0("<b>", ..., "</b>")
+#' aside(attr = list(class = "test"))
+aside <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'aside'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element base
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param href A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param target A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <audio> HTML tag.
+#'
+#' The <audio> HTML element is used to embed sound content in documents. It may contain one or more audio sources, represented using the src attribute or the source element: the browser will choose the most suitable one. It can also be the destination for streamed media, using a MediaStream.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' base(class = "test")
-base <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-href = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-target = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "href" = href, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "target" = target, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<base ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<base>"
-}
-return(x)
+#' audio(attr = list(class = "test"))
+audio <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'audio'))
 }
 
-#' Generate HTML tag for element bdi
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <b> HTML tag.
+#'
+#' The <b> HTML element is used to draw the reader's attention to the element's contents, which are not otherwise granted special importance. This was formerly known as the Boldface element, and most browsers still draw the text in boldface. However, you should not use <b> for styling text; instead, you should use the CSS font-weight property to create boldface text, or the strong element to indicate that text is of special importance.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/b}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' bdi(class = "test", "Example")
-bdi <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<bdi ", attrs, ">")
-x <- paste0(s_tag, ..., "</bdi>")
-}else{
-x <- paste0("<bdi>", ..., "</bdi>")
-}
-return(x)
+#' b(attr = list(class = "test"))
+b <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'b'))
 }
 
-#' Generate HTML tag for element bdo
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <base> HTML tag.
+#'
+#' The <base> HTML element specifies the base URL to use for all relative URLs in a document. There can be only one <base> element in a document.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' bdo(class = "test", "Example")
-bdo <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<bdo ", attrs, ">")
-x <- paste0(s_tag, ..., "</bdo>")
-}else{
-x <- paste0("<bdo>", ..., "</bdo>")
+#' base(attr = list(class = "test"))
+base <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'base'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element blockquote
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param cite A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <bdi> HTML tag.
+#'
+#' The <bdi> HTML element tells the browser's bidirectional algorithm to treat the text it contains in isolation from its surrounding text. It's particularly useful when a website dynamically inserts some text and doesn't know the directionality of the text being inserted.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdi}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' blockquote(class = "test", "Example")
-blockquote <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-cite = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "cite" = cite, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<blockquote ", attrs, ">")
-x <- paste0(s_tag, ..., "</blockquote>")
-}else{
-x <- paste0("<blockquote>", ..., "</blockquote>")
+#' bdi(attr = list(class = "test"))
+bdi <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'bdi'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element body
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onafterprint A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onbeforeprint A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onbeforeunload A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onblur A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onerror A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onfocus A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onhashchange A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onlanguagechange A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onload A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onmessage A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onoffline A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param ononline A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onpopstate A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onredo A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onresize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onstorage A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onundo A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param onunload A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <bdo> HTML tag.
+#'
+#' The <bdo> HTML element overrides the current directionality of text, so that the text within is rendered in a different direction.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdo}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' body(class = "test", "Example")
-body <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-onafterprint = NULL,
-onbeforeprint = NULL,
-onbeforeunload = NULL,
-onblur = NULL,
-onerror = NULL,
-onfocus = NULL,
-onhashchange = NULL,
-onlanguagechange = NULL,
-onload = NULL,
-onmessage = NULL,
-onoffline = NULL,
-ononline = NULL,
-onpopstate = NULL,
-onredo = NULL,
-onresize = NULL,
-onstorage = NULL,
-onundo = NULL,
-onunload = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "onafterprint" = onafterprint, "onbeforeprint" = onbeforeprint, "onbeforeunload" = onbeforeunload, "onblur" = onblur, "onerror" = onerror, "onfocus" = onfocus, "onhashchange" = onhashchange, "onlanguagechange" = onlanguagechange, "onload" = onload, "onmessage" = onmessage, "onoffline" = onoffline, "ononline" = ononline, "onpopstate" = onpopstate, "onredo" = onredo, "onresize" = onresize, "onstorage" = onstorage, "onundo" = onundo, "onunload" = onunload, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<body ", attrs, ">")
-x <- paste0(s_tag, ..., "</body>")
-}else{
-x <- paste0("<body>", ..., "</body>")
+#' bdo(attr = list(class = "test"))
+bdo <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'bdo'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element br
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param clear A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <blockquote> HTML tag.
+#'
+#' The <blockquote> HTML element indicates that the enclosed text is an extended quotation. Usually, this is rendered visually by indentation (see Notes for how to change it). A URL for the source of the quotation may be given using the cite attribute, while a text representation of the source can be given using the cite element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/blockquote}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' br(class = "test")
-br <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-clear = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "clear" = clear, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<br ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<br>"
+#' blockquote(attr = list(class = "test"))
+blockquote <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'blockquote'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element button
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autofocus A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formaction A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formenctype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formmethod A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formnovalidate A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formtarget A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <body> HTML tag.
+#'
+#' The <body> HTML element represents the content of an HTML document. There can be only one <body> element in a document.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' button(class = "test", "Example")
-button <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-autofocus = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-disabled = NULL,
-draggable = NULL,
-form = NULL,
-formaction = NULL,
-formenctype = NULL,
-formmethod = NULL,
-formnovalidate = NULL,
-formtarget = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-value = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "autofocus" = autofocus, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "disabled" = disabled, "draggable" = draggable, "form" = form, "formaction" = formaction, "formenctype" = formenctype, "formmethod" = formmethod, "formnovalidate" = formnovalidate, "formtarget" = formtarget, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, "value" = value, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<button ", attrs, ">")
-x <- paste0(s_tag, ..., "</button>")
-}else{
-x <- paste0("<button>", ..., "</button>")
-}
-return(x)
+#' body(attr = list(class = "test"))
+body <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'body'))
 }
 
-#' Generate HTML tag for element canvas
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param height A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param width A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <br> HTML tag.
+#'
+#' The <br> HTML element produces a line break in text (carriage-return). It is useful for writing a poem or an address, where the division of lines is significant.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/br}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' canvas(class = "test", "Example")
-canvas <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-height = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-width = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "height" = height, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "width" = width, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<canvas ", attrs, ">")
-x <- paste0(s_tag, ..., "</canvas>")
-}else{
-x <- paste0("<canvas>", ..., "</canvas>")
+#' br(attr = list(class = "test"))
+br <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'br'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element caption
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <button> HTML tag.
+#'
+#' The <button> HTML element represents a clickable button, used to submit forms or anywhere in a document for accessible, standard button functionality.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' caption(class = "test", "Example")
-caption <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<caption ", attrs, ">")
-x <- paste0(s_tag, ..., "</caption>")
-}else{
-x <- paste0("<caption>", ..., "</caption>")
+#' button(attr = list(class = "test"))
+button <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'button'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element cite
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <canvas> HTML tag.
+#'
+#' Use the HTML <canvas> element with either the canvas scripting API or the WebGL API to draw graphics and animations.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' cite(class = "test", "Example")
-cite <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<cite ", attrs, ">")
-x <- paste0(s_tag, ..., "</cite>")
-}else{
-x <- paste0("<cite>", ..., "</cite>")
-}
-return(x)
+#' canvas(attr = list(class = "test"))
+canvas <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'canvas'))
 }
 
-#' Generate HTML tag for element code
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <caption> HTML tag.
+#'
+#' The <caption> HTML element specifies the caption (or title) of a table.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' code(class = "test", "Example")
-code <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<code ", attrs, ">")
-x <- paste0(s_tag, ..., "</code>")
-}else{
-x <- paste0("<code>", ..., "</code>")
-}
-return(x)
+#' caption(attr = list(class = "test"))
+caption <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'caption'))
 }
 
-#' Generate HTML tag for element col
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param span A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <cite> HTML tag.
+#'
+#' The <cite> HTML element is used to describe a reference to a cited creative work, and must include the title of that work. The reference may be in an abbreviated form according to context-appropriate conventions related to citation metadata.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/cite}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' col(class = "test")
-col <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-span = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "span" = span, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<col ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<col>"
+#' cite(attr = list(class = "test"))
+cite <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'cite'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element colgroup
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param span A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <code> HTML tag.
+#'
+#' The <code> HTML element displays its contents styled in a fashion intended to indicate that the text is a short fragment of computer code. By default, the content text is displayed using the user agent default monospace font.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/code}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' colgroup(class = "test")
-colgroup <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-span = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "span" = span, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<colgroup ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<colgroup>"
+#' code(attr = list(class = "test"))
+code <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'code'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element data
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <col> HTML tag.
+#'
+#' The <col> HTML element defines a column within a table and is used for defining common semantics on all common cells. It is generally found within a colgroup element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/col}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' data(class = "test", "Example")
-data <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-value = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "value" = value, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<data ", attrs, ">")
-x <- paste0(s_tag, ..., "</data>")
-}else{
-x <- paste0("<data>", ..., "</data>")
-}
-return(x)
+#' col(attr = list(class = "test"))
+col <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'col'))
 }
 
-#' Generate HTML tag for element datalist
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <colgroup> HTML tag.
+#'
+#' The <colgroup> HTML element defines a group of columns within a table.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/colgroup}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' datalist(class = "test", "Example")
-datalist <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<datalist ", attrs, ">")
-x <- paste0(s_tag, ..., "</datalist>")
-}else{
-x <- paste0("<datalist>", ..., "</datalist>")
+#' colgroup(attr = list(class = "test"))
+colgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'colgroup'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element dd
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <data> HTML tag.
+#'
+#' The <data> HTML element links a given piece of content with a machine-readable translation. If the content is time- or date-related, the time element must be used.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/data}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' dd(class = "test", "Example")
-dd <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<dd ", attrs, ">")
-x <- paste0(s_tag, ..., "</dd>")
-}else{
-x <- paste0("<dd>", ..., "</dd>")
+#' data(attr = list(class = "test"))
+data <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'data'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element del
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param cite A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param datetime A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <datalist> HTML tag.
+#'
+#' The <datalist> HTML element contains a set of option elements that represent the permissible or recommended options available to choose from within other controls.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/datalist}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' del(class = "test", "Example")
-del <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-cite = NULL,
-class = NULL,
-contenteditable = NULL,
-datetime = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "cite" = cite, "class" = class, "contenteditable" = contenteditable, "datetime" = datetime, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<del ", attrs, ">")
-x <- paste0(s_tag, ..., "</del>")
-}else{
-x <- paste0("<del>", ..., "</del>")
-}
-return(x)
+#' datalist(attr = list(class = "test"))
+datalist <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'datalist'))
 }
 
-#' Generate HTML tag for element details
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param open A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <dd> HTML tag.
+#'
+#' The <dd> HTML element provides the description, definition, or value for the preceding term (dt) in a description list (dl).
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dd}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' details(class = "test", "Example")
-details <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-open = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "open" = open, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<details ", attrs, ">")
-x <- paste0(s_tag, ..., "</details>")
-}else{
-x <- paste0("<details>", ..., "</details>")
-}
-return(x)
+#' dd(attr = list(class = "test"))
+dd <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dd'))
 }
 
-#' Generate HTML tag for element dfn
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <del> HTML tag.
+#'
+#' The <del> HTML element represents a range of text that has been deleted from a document. This can be used when rendering "track changes" or source code diff information, for example. The ins element can be used for the opposite purpose: to indicate text that has been added to the document.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/del}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' dfn(class = "test", "Example")
-dfn <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<dfn ", attrs, ">")
-x <- paste0(s_tag, ..., "</dfn>")
-}else{
-x <- paste0("<dfn>", ..., "</dfn>")
-}
-return(x)
+#' del(attr = list(class = "test"))
+del <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'del'))
 }
 
-#' Generate HTML tag for element dialog
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param open A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <details> HTML tag.
+#'
+#' The <details> HTML element creates a disclosure widget in which information is visible only when the widget is toggled into an "open" state. A summary or label must be provided using the summary element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' dialog(class = "test", "Example")
-dialog <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-open = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "open" = open, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<dialog ", attrs, ">")
-x <- paste0(s_tag, ..., "</dialog>")
-}else{
-x <- paste0("<dialog>", ..., "</dialog>")
-}
-return(x)
+#' details(attr = list(class = "test"))
+details <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'details'))
 }
 
-#' Generate HTML tag for element div
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <dfn> HTML tag.
+#'
+#' The <dfn> HTML element is used to indicate the term being defined within the context of a definition phrase or sentence. The p element, the dt/dd pairing, or the section element which is the nearest ancestor of the <dfn> is considered to be the definition of the term.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dfn}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' div(class = "test", "Example")
-div <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<div ", attrs, ">")
-x <- paste0(s_tag, ..., "</div>")
-}else{
-x <- paste0("<div>", ..., "</div>")
+#' dfn(attr = list(class = "test"))
+dfn <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dfn'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element dl
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <dialog> HTML tag.
+#'
+#' The <dialog> HTML element represents a dialog box or other interactive component, such as a dismissible alert, inspector, or subwindow.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' dl(class = "test", "Example")
-dl <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<dl ", attrs, ">")
-x <- paste0(s_tag, ..., "</dl>")
-}else{
-x <- paste0("<dl>", ..., "</dl>")
+#' dialog(attr = list(class = "test"))
+dialog <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dialog'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element dt
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <div> HTML tag.
+#'
+#' The <div> HTML element is the generic container for flow content. It has no effect on the content or layout until styled in some way using CSS (e.g. styling is directly applied to it, or some kind of layout model like Flexbox is applied to its parent element).
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' dt(class = "test", "Example")
-dt <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<dt ", attrs, ">")
-x <- paste0(s_tag, ..., "</dt>")
-}else{
-x <- paste0("<dt>", ..., "</dt>")
-}
-return(x)
+#' div(attr = list(class = "test"))
+div <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'div'))
 }
 
-#' Generate HTML tag for element em
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <dl> HTML tag.
+#'
+#' The <dl> HTML element represents a description list. The element encloses a list of groups of terms (specified using the dt element) and descriptions (provided by dd elements). Common uses for this element are to implement a glossary or to display metadata (a list of key-value pairs).
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dl}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' em(class = "test", "Example")
-em <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<em ", attrs, ">")
-x <- paste0(s_tag, ..., "</em>")
-}else{
-x <- paste0("<em>", ..., "</em>")
+#' dl(attr = list(class = "test"))
+dl <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dl'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element embed
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param height A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param width A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <dt> HTML tag.
+#'
+#' The <dt> HTML element specifies a term in a description or definition list, and as such must be used inside a dl element. It is usually followed by a dd element; however, multiple <dt> elements in a row indicate several terms that are all defined by the immediate next dd element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dt}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' embed(class = "test")
-embed <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-height = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-width = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "height" = height, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, "width" = width, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<embed ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<embed>"
+#' dt(attr = list(class = "test"))
+dt <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dt'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element fieldset
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <em> HTML tag.
+#'
+#' The <em> HTML element marks text that has stress emphasis. The <em> element can be nested, with each level of nesting indicating a greater degree of emphasis.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' fieldset(class = "test", "Example")
-fieldset <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-disabled = NULL,
-draggable = NULL,
-form = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "disabled" = disabled, "draggable" = draggable, "form" = form, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<fieldset ", attrs, ">")
-x <- paste0(s_tag, ..., "</fieldset>")
-}else{
-x <- paste0("<fieldset>", ..., "</fieldset>")
-}
-return(x)
+#' em(attr = list(class = "test"))
+em <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'em'))
 }
 
-#' Generate HTML tag for element figcaption
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <embed> HTML tag.
+#'
+#' The <embed> HTML element embeds external content at the specified point in the document. This content is provided by an external application or other source of interactive content such as a browser plug-in.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/embed}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' figcaption(class = "test", "Example")
-figcaption <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<figcaption ", attrs, ">")
-x <- paste0(s_tag, ..., "</figcaption>")
-}else{
-x <- paste0("<figcaption>", ..., "</figcaption>")
-}
-return(x)
+#' embed(attr = list(class = "test"))
+embed <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'embed'))
 }
 
-#' Generate HTML tag for element figure
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <fieldset> HTML tag.
+#'
+#' The <fieldset> HTML element is used to group several controls as well as labels (label) within a web form.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/fieldset}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' figure(class = "test", "Example")
-figure <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<figure ", attrs, ">")
-x <- paste0(s_tag, ..., "</figure>")
-}else{
-x <- paste0("<figure>", ..., "</figure>")
+#' fieldset(attr = list(class = "test"))
+fieldset <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'fieldset'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element footer
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <figcaption> HTML tag.
+#'
+#' The <figcaption> HTML element represents a caption or legend describing the rest of the contents of its parent figure element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figcaption}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' footer(class = "test", "Example")
-footer <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<footer ", attrs, ">")
-x <- paste0(s_tag, ..., "</footer>")
-}else{
-x <- paste0("<footer>", ..., "</footer>")
+#' figcaption(attr = list(class = "test"))
+figcaption <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'figcaption'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element form
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accept_charset A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param action A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocomplete A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param enctype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param method A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param novalidate A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param rel A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param target A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <figure> HTML tag.
+#'
+#' The <figure> HTML element represents self-contained content, potentially with an optional caption, which is specified using the figcaption element. The figure, its caption, and its contents are referenced as a single unit.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/figure}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' form(class = "test", "Example")
-form <- function(
-...,
-accept_charset = NULL,
-accesskey = NULL,
-action = NULL,
-autocapitalize = NULL,
-autocomplete = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-enctype = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-method = NULL,
-name = NULL,
-novalidate = NULL,
-part = NULL,
-rel = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-target = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accept-charset" = accept_charset, "accesskey" = accesskey, "action" = action, "autocapitalize" = autocapitalize, "autocomplete" = autocomplete, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "enctype" = enctype, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "method" = method, "name" = name, "novalidate" = novalidate, "part" = part, "rel" = rel, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "target" = target, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<form ", attrs, ">")
-x <- paste0(s_tag, ..., "</form>")
-}else{
-x <- paste0("<form>", ..., "</form>")
-}
-return(x)
+#' figure(attr = list(class = "test"))
+figure <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'figure'))
 }
 
-#' Generate HTML tag for element h1
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <footer> HTML tag.
+#'
+#' The <footer> HTML element represents a footer for its nearest sectioning content or sectioning root element. A <footer> typically contains information about the author of the section, copyright data or links to related documents.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/footer}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' h1(class = "test", "Example")
-h1 <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<h1 ", attrs, ">")
-x <- paste0(s_tag, ..., "</h1>")
-}else{
-x <- paste0("<h1>", ..., "</h1>")
+#' footer(attr = list(class = "test"))
+footer <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'footer'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element h2
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <form> HTML tag.
+#'
+#' The <form> HTML element represents a document section containing interactive controls for submitting information.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' h2(class = "test", "Example")
-h2 <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<h2 ", attrs, ">")
-x <- paste0(s_tag, ..., "</h2>")
-}else{
-x <- paste0("<h2>", ..., "</h2>")
+#' form(attr = list(class = "test"))
+form <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'form'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element h3
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <h1> HTML tag.
+#'
+#' The <h1> to <h6> HTML elements represent six levels of section headings. <h1> is the highest section level and <h6> is the lowest.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' h3(class = "test", "Example")
-h3 <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<h3 ", attrs, ">")
-x <- paste0(s_tag, ..., "</h3>")
-}else{
-x <- paste0("<h3>", ..., "</h3>")
+#' h1(attr = list(class = "test"))
+h1 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h1'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element h4
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <h2> HTML tag.
+#'
+#' The <h1> to <h6> HTML elements represent six levels of section headings. <h1> is the highest section level and <h6> is the lowest.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' h4(class = "test", "Example")
-h4 <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<h4 ", attrs, ">")
-x <- paste0(s_tag, ..., "</h4>")
-}else{
-x <- paste0("<h4>", ..., "</h4>")
+#' h2(attr = list(class = "test"))
+h2 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h2'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element h5
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <h3> HTML tag.
+#'
+#' The <h1> to <h6> HTML elements represent six levels of section headings. <h1> is the highest section level and <h6> is the lowest.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' h5(class = "test", "Example")
-h5 <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<h5 ", attrs, ">")
-x <- paste0(s_tag, ..., "</h5>")
-}else{
-x <- paste0("<h5>", ..., "</h5>")
-}
-return(x)
+#' h3(attr = list(class = "test"))
+h3 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h3'))
 }
 
-#' Generate HTML tag for element h6
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <h4> HTML tag.
+#'
+#' The <h1> to <h6> HTML elements represent six levels of section headings. <h1> is the highest section level and <h6> is the lowest.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' h6(class = "test", "Example")
-h6 <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<h6 ", attrs, ">")
-x <- paste0(s_tag, ..., "</h6>")
-}else{
-x <- paste0("<h6>", ..., "</h6>")
-}
-return(x)
+#' h4(attr = list(class = "test"))
+h4 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h4'))
 }
 
-#' Generate HTML tag for element head
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <h5> HTML tag.
+#'
+#' The <h1> to <h6> HTML elements represent six levels of section headings. <h1> is the highest section level and <h6> is the lowest.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' head(class = "test", "Example")
-head <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<head ", attrs, ">")
-x <- paste0(s_tag, ..., "</head>")
-}else{
-x <- paste0("<head>", ..., "</head>")
+#' h5(attr = list(class = "test"))
+h5 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h5'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element header
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <h6> HTML tag.
+#'
+#' The <h1> to <h6> HTML elements represent six levels of section headings. <h1> is the highest section level and <h6> is the lowest.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/Heading_Elements}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' header(class = "test", "Example")
-header <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<header ", attrs, ">")
-x <- paste0(s_tag, ..., "</header>")
-}else{
-x <- paste0("<header>", ..., "</header>")
+#' h6(attr = list(class = "test"))
+h6 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h6'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element hgroup
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <head> HTML tag.
+#'
+#' The <head> HTML element contains machine-readable information (metadata) about the document, like its title, scripts, and style sheets.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' hgroup(class = "test", "Example")
-hgroup <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<hgroup ", attrs, ">")
-x <- paste0(s_tag, ..., "</hgroup>")
-}else{
-x <- paste0("<hgroup>", ..., "</hgroup>")
-}
-return(x)
+#' head(attr = list(class = "test"))
+head <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'head'))
 }
 
-#' Generate HTML tag for element hr
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <header> HTML tag.
+#'
+#' The <header> HTML element represents introductory content, typically a group of introductory or navigational aids. It may contain some heading elements but also a logo, a search form, an author name, and other elements.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' hr(class = "test")
-hr <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<hr ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<hr>"
-}
-return(x)
+#' header(attr = list(class = "test"))
+header <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'header'))
 }
 
-#' Generate HTML tag for element html
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param xmlns A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <hgroup> HTML tag.
+#'
+#' The <hgroup> HTML element represents a multi-level heading for a section of a document. It groups a set of <h1>–<h6> elements.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/hgroup}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' html(class = "test", "Example")
-html <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-xmlns = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "xmlns" = xmlns, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<html ", attrs, ">")
-x <- paste0(s_tag, ..., "</html>")
-}else{
-x <- paste0("<html>", ..., "</html>")
-}
-return(x)
+#' hgroup(attr = list(class = "test"))
+hgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'hgroup'))
 }
 
-#' Generate HTML tag for element i
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <hr> HTML tag.
+#'
+#' The <hr> HTML element represents a thematic break between paragraph-level elements: for example, a change of scene in a story, or a shift of topic within a section.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/hr}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' i(class = "test", "Example")
-i <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<i ", attrs, ">")
-x <- paste0(s_tag, ..., "</i>")
-}else{
-x <- paste0("<i>", ..., "</i>")
+#' hr(attr = list(class = "test"))
+hr <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'hr'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element iframe
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param allow A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param allowfullscreen A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param allowpaymentrequest A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param csp A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param height A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param loading A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param referrerpolicy A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param sandbox A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param srcdoc A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param width A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <html> HTML tag.
+#'
+#' The <html> HTML element represents the root (top-level element) of an HTML document, so it is also referred to as the root element. All other elements must be descendants of this element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/html}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' iframe(class = "test")
-iframe <- function(
-accesskey = NULL,
-allow = NULL,
-allowfullscreen = NULL,
-allowpaymentrequest = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-csp = NULL,
-dir = NULL,
-draggable = NULL,
-height = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-loading = NULL,
-name = NULL,
-part = NULL,
-referrerpolicy = NULL,
-sandbox = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-srcdoc = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-width = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "allow" = allow, "allowfullscreen" = allowfullscreen, "allowpaymentrequest" = allowpaymentrequest, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "csp" = csp, "dir" = dir, "draggable" = draggable, "height" = height, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "loading" = loading, "name" = name, "part" = part, "referrerpolicy" = referrerpolicy, "sandbox" = sandbox, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "srcdoc" = srcdoc, "style" = style, "tabindex" = tabindex, "title" = title, "width" = width, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<iframe ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<iframe>"
+#' html(attr = list(class = "test"))
+html <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'html'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element img
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param alt A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param crossorigin A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param decoding A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param height A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param ismap A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param loading A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param referrerpolicy A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param sizes A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param srcset A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param usemap A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param width A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <i> HTML tag.
+#'
+#' The <i> HTML element represents a range of text that is set off from the normal text for some reason, such as idiomatic text, technical terms, taxonomical designations, among others. Historically, these have been presented using italicized type, which is the original source of the <i> naming of this element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/i}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' img(class = "test")
-img <- function(
-accesskey = NULL,
-alt = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-crossorigin = NULL,
-decoding = NULL,
-dir = NULL,
-draggable = NULL,
-height = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-ismap = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-loading = NULL,
-part = NULL,
-referrerpolicy = NULL,
-sizes = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-srcset = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-usemap = NULL,
-width = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "alt" = alt, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "crossorigin" = crossorigin, "decoding" = decoding, "dir" = dir, "draggable" = draggable, "height" = height, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "ismap" = ismap, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "loading" = loading, "part" = part, "referrerpolicy" = referrerpolicy, "sizes" = sizes, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "srcset" = srcset, "style" = style, "tabindex" = tabindex, "title" = title, "usemap" = usemap, "width" = width, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<img ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<img>"
-}
-return(x)
+#' i(attr = list(class = "test"))
+i <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'i'))
 }
 
-#' Generate HTML tag for element input
-#'
-#' @param accept A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param alt A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocomplete A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autofocus A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param capture A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param checked A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dirname A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formaction A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formenctype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formmethod A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formnovalidate A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param formtarget A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param height A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param list A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param max A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param maxlength A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param min A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param minlength A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param multiple A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param pattern A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param placeholder A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param readonly A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param required A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param size A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param step A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param width A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <iframe> HTML tag.
+#'
+#' The <iframe> HTML element represents a nested browsing context, embedding another HTML page into the current one.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' input(class = "test")
-input <- function(
-accept = NULL,
-accesskey = NULL,
-alt = NULL,
-autocapitalize = NULL,
-autocomplete = NULL,
-autofocus = NULL,
-capture = NULL,
-checked = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-dirname = NULL,
-disabled = NULL,
-draggable = NULL,
-form = NULL,
-formaction = NULL,
-formenctype = NULL,
-formmethod = NULL,
-formnovalidate = NULL,
-formtarget = NULL,
-height = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-list = NULL,
-max = NULL,
-maxlength = NULL,
-min = NULL,
-minlength = NULL,
-multiple = NULL,
-name = NULL,
-part = NULL,
-pattern = NULL,
-placeholder = NULL,
-readonly = NULL,
-required = NULL,
-size = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-step = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-value = NULL,
-width = NULL,
-custom_attr = NULL){
-attr_values <- c("accept" = accept, "accesskey" = accesskey, "alt" = alt, "autocapitalize" = autocapitalize, "autocomplete" = autocomplete, "autofocus" = autofocus, "capture" = capture, "checked" = checked, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "dirname" = dirname, "disabled" = disabled, "draggable" = draggable, "form" = form, "formaction" = formaction, "formenctype" = formenctype, "formmethod" = formmethod, "formnovalidate" = formnovalidate, "formtarget" = formtarget, "height" = height, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "list" = list, "max" = max, "maxlength" = maxlength, "min" = min, "minlength" = minlength, "multiple" = multiple, "name" = name, "part" = part, "pattern" = pattern, "placeholder" = placeholder, "readonly" = readonly, "required" = required, "size" = size, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "step" = step, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, "value" = value, "width" = width, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<input ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<input>"
-}
-return(x)
+#' iframe(attr = list(class = "test"))
+iframe <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'iframe'))
 }
 
-#' Generate HTML tag for element ins
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param cite A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param datetime A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <img> HTML tag.
+#'
+#' The <img> HTML element embeds an image into the document.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' ins(class = "test", "Example")
-ins <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-cite = NULL,
-class = NULL,
-contenteditable = NULL,
-datetime = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "cite" = cite, "class" = class, "contenteditable" = contenteditable, "datetime" = datetime, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<ins ", attrs, ">")
-x <- paste0(s_tag, ..., "</ins>")
-}else{
-x <- paste0("<ins>", ..., "</ins>")
+#' img(attr = list(class = "test"))
+img <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'img'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element kbd
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <input> HTML tag.
+#'
+#' The <input> HTML element is used to create interactive controls for web-based forms in order to accept data from the user; a wide variety of types of input data and control widgets are available, depending on the device and user agent. The <input> element is one of the most powerful and complex in all of HTML due to the sheer number of combinations of input types and attributes.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' kbd(class = "test", "Example")
-kbd <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<kbd ", attrs, ">")
-x <- paste0(s_tag, ..., "</kbd>")
-}else{
-x <- paste0("<kbd>", ..., "</kbd>")
+#' input(attr = list(class = "test"))
+input <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'input'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element label
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param for_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <ins> HTML tag.
+#'
+#' The <ins> HTML element represents a range of text that has been added to a document. You can use the del element to similarly represent a range of text that has been deleted from the document.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ins}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' label(class = "test", "Example")
-label <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-for_attr = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "for" = for_attr, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<label ", attrs, ">")
-x <- paste0(s_tag, ..., "</label>")
-}else{
-x <- paste0("<label>", ..., "</label>")
+#' ins(attr = list(class = "test"))
+ins <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ins'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element legend
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <kbd> HTML tag.
+#'
+#' The <kbd> HTML element represents a span of inline text denoting textual user input from a keyboard, voice input, or any other text entry device. By convention, the user agent defaults to rendering the contents of a <kbd> element using its default monospace font, although this is not mandated by the HTML standard.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/kbd}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' legend(class = "test", "Example")
-legend <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<legend ", attrs, ">")
-x <- paste0(s_tag, ..., "</legend>")
-}else{
-x <- paste0("<legend>", ..., "</legend>")
+#' kbd(attr = list(class = "test"))
+kbd <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'kbd'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element li
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <label> HTML tag.
+#'
+#' The <label> HTML element represents a caption for an item in a user interface.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' li(class = "test", "Example")
-li <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-value = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "value" = value, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<li ", attrs, ">")
-x <- paste0(s_tag, ..., "</li>")
-}else{
-x <- paste0("<li>", ..., "</li>")
-}
-return(x)
+#' label(attr = list(class = "test"))
+label <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'label'))
 }
 
-#' Generate HTML tag for element link
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param as A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param crossorigin A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param href A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hreflang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param imagesizes A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param imagesrcset A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param integrity A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param media A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param prefetch A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param referrerpolicy A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param rel A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param sizes A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <legend> HTML tag.
+#'
+#' The <legend> HTML element represents a caption for the content of its parent fieldset.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/legend}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' link(class = "test")
-link <- function(
-accesskey = NULL,
-as = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-crossorigin = NULL,
-dir = NULL,
-disabled = NULL,
-draggable = NULL,
-hidden = NULL,
-href = NULL,
-hreflang = NULL,
-id = NULL,
-imagesizes = NULL,
-imagesrcset = NULL,
-inputmode = NULL,
-integrity = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-media = NULL,
-part = NULL,
-prefetch = NULL,
-referrerpolicy = NULL,
-rel = NULL,
-sizes = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "as" = as, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "crossorigin" = crossorigin, "dir" = dir, "disabled" = disabled, "draggable" = draggable, "hidden" = hidden, "href" = href, "hreflang" = hreflang, "id" = id, "imagesizes" = imagesizes, "imagesrcset" = imagesrcset, "inputmode" = inputmode, "integrity" = integrity, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "media" = media, "part" = part, "prefetch" = prefetch, "referrerpolicy" = referrerpolicy, "rel" = rel, "sizes" = sizes, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<link ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<link>"
+#' legend(attr = list(class = "test"))
+legend <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'legend'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element main
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <li> HTML tag.
+#'
+#' The <li> HTML element is used to represent an item in a list. It must be contained in a parent element: an ordered list (ol), an unordered list (ul), or a menu (menu). In menus and unordered lists, list items are usually displayed using bullet points. In ordered lists, they are usually displayed with an ascending counter on the left, such as a number or letter.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/li}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' main(class = "test", "Example")
-main <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<main ", attrs, ">")
-x <- paste0(s_tag, ..., "</main>")
-}else{
-x <- paste0("<main>", ..., "</main>")
+#' li(attr = list(class = "test"))
+li <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'li'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element map
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <link> HTML tag.
+#'
+#' The <link> HTML element specifies relationships between the current document and an external resource. This element is most commonly used to link to CSS, but is also used to establish site icons (both "favicon" style icons and icons for the home screen and apps on mobile devices) among other things.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' map(class = "test", "Example")
-map <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<map ", attrs, ">")
-x <- paste0(s_tag, ..., "</map>")
-}else{
-x <- paste0("<map>", ..., "</map>")
-}
-return(x)
+#' link(attr = list(class = "test"))
+link <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'link'))
 }
 
-#' Generate HTML tag for element mark
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <main> HTML tag.
+#'
+#' The <main> HTML element represents the dominant content of the body of a document. The main content area consists of content that is directly related to or expands upon the central topic of a document, or the central functionality of an application.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/main}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' mark(class = "test", "Example")
-mark <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<mark ", attrs, ">")
-x <- paste0(s_tag, ..., "</mark>")
-}else{
-x <- paste0("<mark>", ..., "</mark>")
-}
-return(x)
+#' main(attr = list(class = "test"))
+main <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'main'))
 }
 
-#' Generate HTML tag for element menu
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <map> HTML tag.
+#'
+#' The <map> HTML element is used with area elements to define an image map (a clickable link area).
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' menu(class = "test", "Example")
-menu <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<menu ", attrs, ">")
-x <- paste0(s_tag, ..., "</menu>")
-}else{
-x <- paste0("<menu>", ..., "</menu>")
+#' map(attr = list(class = "test"))
+map <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'map'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element meta
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param charset A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param content A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param http_equiv A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <mark> HTML tag.
+#'
+#' The <mark> HTML element represents text which is marked or highlighted for reference or notation purposes, due to the marked passage's relevance or importance in the enclosing context.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/mark}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' meta(class = "test")
-meta <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-charset = NULL,
-class = NULL,
-content = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-http_equiv = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "charset" = charset, "class" = class, "content" = content, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "http-equiv" = http_equiv, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<meta ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<meta>"
+#' mark(attr = list(class = "test"))
+mark <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'mark'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element meter
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param high A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param low A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param max A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param min A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param optimum A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <menu> HTML tag.
+#'
+#' The <menu> HTML element is a semantic alternative to ul. It represents an unordered list of items (represented by li elements), each of these represent a link or other command that the user can activate.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/menu}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' meter(class = "test", "Example")
-meter <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-form = NULL,
-hidden = NULL,
-high = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-low = NULL,
-max = NULL,
-min = NULL,
-optimum = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-value = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "form" = form, "hidden" = hidden, "high" = high, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "low" = low, "max" = max, "min" = min, "optimum" = optimum, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "value" = value, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<meter ", attrs, ">")
-x <- paste0(s_tag, ..., "</meter>")
-}else{
-x <- paste0("<meter>", ..., "</meter>")
-}
-return(x)
+#' menu(attr = list(class = "test"))
+menu <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'menu'))
 }
 
-#' Generate HTML tag for element nav
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <meta> HTML tag.
+#'
+#' The <meta> HTML element represents Metadata that cannot be represented by other HTML meta-related elements, like base, link, script, style or title.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' nav(class = "test", "Example")
-nav <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<nav ", attrs, ">")
-x <- paste0(s_tag, ..., "</nav>")
-}else{
-x <- paste0("<nav>", ..., "</nav>")
+#' meta(attr = list(class = "test"))
+meta <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'meta'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element noscript
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <meter> HTML tag.
+#'
+#' The <meter> HTML element represents either a scalar value within a known range or a fractional value.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' noscript(class = "test", "Example")
-noscript <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<noscript ", attrs, ">")
-x <- paste0(s_tag, ..., "</noscript>")
-}else{
-x <- paste0("<noscript>", ..., "</noscript>")
+#' meter(attr = list(class = "test"))
+meter <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'meter'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element object
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param data A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param height A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param typemustmatch A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param usemap A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param width A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <nav> HTML tag.
+#'
+#' The <nav> HTML element represents a section of a page whose purpose is to provide navigation links, either within the current document or to other documents. Common examples of navigation sections are menus, tables of contents, and indexes.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' object(class = "test", "Example")
-object <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-data = NULL,
-dir = NULL,
-draggable = NULL,
-form = NULL,
-height = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-typemustmatch = NULL,
-usemap = NULL,
-width = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "data" = data, "dir" = dir, "draggable" = draggable, "form" = form, "height" = height, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, "typemustmatch" = typemustmatch, "usemap" = usemap, "width" = width, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<object ", attrs, ">")
-x <- paste0(s_tag, ..., "</object>")
-}else{
-x <- paste0("<object>", ..., "</object>")
-}
-return(x)
+#' nav(attr = list(class = "test"))
+nav <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'nav'))
 }
 
-#' Generate HTML tag for element ol
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param reversed A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param start A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <noscript> HTML tag.
+#'
+#' The <noscript> HTML element defines a section of HTML to be inserted if a script type on the page is unsupported or if scripting is currently turned off in the browser.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/noscript}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' ol(class = "test", "Example")
-ol <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-reversed = NULL,
-slot = NULL,
-spellcheck = NULL,
-start = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "reversed" = reversed, "slot" = slot, "spellcheck" = spellcheck, "start" = start, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<ol ", attrs, ">")
-x <- paste0(s_tag, ..., "</ol>")
-}else{
-x <- paste0("<ol>", ..., "</ol>")
-}
-return(x)
+#' noscript(attr = list(class = "test"))
+noscript <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'noscript'))
 }
 
-#' Generate HTML tag for element optgroup
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param label A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <object> HTML tag.
+#'
+#' The <object> HTML element represents an external resource, which can be treated as an image, a nested browsing context, or a resource to be handled by a plugin.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' optgroup(class = "test", "Example")
-optgroup <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-disabled = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-label = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "disabled" = disabled, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "label" = label, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<optgroup ", attrs, ">")
-x <- paste0(s_tag, ..., "</optgroup>")
-}else{
-x <- paste0("<optgroup>", ..., "</optgroup>")
-}
-return(x)
+#' object(attr = list(class = "test"))
+object <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'object'))
 }
 
-#' Generate HTML tag for element option
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param label A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param selected A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <ol> HTML tag.
+#'
+#' The <ol> HTML element represents an ordered list of items — typically rendered as a numbered list.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ol}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' option(class = "test", "Example")
-option <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-disabled = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-label = NULL,
-lang = NULL,
-part = NULL,
-selected = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-value = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "disabled" = disabled, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "label" = label, "lang" = lang, "part" = part, "selected" = selected, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "value" = value, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<option ", attrs, ">")
-x <- paste0(s_tag, ..., "</option>")
-}else{
-x <- paste0("<option>", ..., "</option>")
-}
-return(x)
+#' ol(attr = list(class = "test"))
+ol <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ol'))
 }
 
-#' Generate HTML tag for element output
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param for_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <optgroup> HTML tag.
+#'
+#' The <optgroup> HTML element creates a grouping of options within a select element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/optgroup}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' output(class = "test", "Example")
-output <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-for_attr = NULL,
-form = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "for" = for_attr, "form" = form, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<output ", attrs, ">")
-x <- paste0(s_tag, ..., "</output>")
-}else{
-x <- paste0("<output>", ..., "</output>")
+#' optgroup(attr = list(class = "test"))
+optgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'optgroup'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element p
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <option> HTML tag.
+#'
+#' The <option> HTML element is used to define an item contained in a select, an optgroup, or a datalist element. As such, <option> can represent menu items in popups and other lists of items in an HTML document.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' p(class = "test", "Example")
-p <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<p ", attrs, ">")
-x <- paste0(s_tag, ..., "</p>")
-}else{
-x <- paste0("<p>", ..., "</p>")
+#' option(attr = list(class = "test"))
+option <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'option'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element param
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <output> HTML tag.
+#'
+#' The <output> HTML element is a container element into which a site or app can inject the results of a calculation or the outcome of a user action.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/output}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' param(class = "test")
-param <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-value = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "value" = value, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<param ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<param>"
-}
-return(x)
+#' output(attr = list(class = "test"))
+output <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'output'))
 }
 
-#' Generate HTML tag for element picture
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <p> HTML tag.
+#'
+#' The <p> HTML element represents a paragraph. Paragraphs are usually represented in visual media as blocks of text separated from adjacent blocks by blank lines and/or first-line indentation, but HTML paragraphs can be any structural grouping of related content, such as images or form fields.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/p}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' picture(class = "test", "Example")
-picture <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<picture ", attrs, ">")
-x <- paste0(s_tag, ..., "</picture>")
-}else{
-x <- paste0("<picture>", ..., "</picture>")
+#' p(attr = list(class = "test"))
+p <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'p'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element pre
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <param> HTML tag.
+#'
+#' The <param> HTML element defines parameters for an object element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/param}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' pre(class = "test", "Example")
-pre <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<pre ", attrs, ">")
-x <- paste0(s_tag, ..., "</pre>")
-}else{
-x <- paste0("<pre>", ..., "</pre>")
+#' param(attr = list(class = "test"))
+param <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'param'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element progress
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param max A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param value A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <picture> HTML tag.
+#'
+#' The <picture> HTML element contains zero or more source elements and one img element to offer alternative versions of an image for different display/device scenarios.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/picture}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' progress(class = "test", "Example")
-progress <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-max = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-value = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "max" = max, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "value" = value, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<progress ", attrs, ">")
-x <- paste0(s_tag, ..., "</progress>")
-}else{
-x <- paste0("<progress>", ..., "</progress>")
+#' picture(attr = list(class = "test"))
+picture <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'picture'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element q
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param cite A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <pre> HTML tag.
+#'
+#' The <pre> HTML element represents preformatted text which is to be presented exactly as written in the HTML file. The text is typically rendered using a non-proportional, or "monospaced, font. Whitespace inside this element is displayed as written.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/pre}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' q(class = "test", "Example")
-q <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-cite = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "cite" = cite, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<q ", attrs, ">")
-x <- paste0(s_tag, ..., "</q>")
-}else{
-x <- paste0("<q>", ..., "</q>")
+#' pre(attr = list(class = "test"))
+pre <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'pre'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element rb
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <progress> HTML tag.
+#'
+#' The <progress> HTML element displays an indicator showing the completion progress of a task, typically displayed as a progress bar.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' rb(class = "test", "Example")
-rb <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<rb ", attrs, ">")
-x <- paste0(s_tag, ..., "</rb>")
-}else{
-x <- paste0("<rb>", ..., "</rb>")
-}
-return(x)
+#' progress(attr = list(class = "test"))
+progress <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'progress'))
 }
 
-#' Generate HTML tag for element rp
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <q> HTML tag.
+#'
+#' The <q> HTML element indicates that the enclosed text is a short inline quotation. Most modern browsers implement this by surrounding the text in quotation marks. This element is intended for short quotations that don't require paragraph breaks; for long quotations use the blockquote element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/q}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' rp(class = "test", "Example")
-rp <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<rp ", attrs, ">")
-x <- paste0(s_tag, ..., "</rp>")
-}else{
-x <- paste0("<rp>", ..., "</rp>")
-}
-return(x)
+#' q(attr = list(class = "test"))
+q <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'q'))
 }
 
-#' Generate HTML tag for element rt
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <rp> HTML tag.
+#'
+#' The <rp> HTML element is used to provide fall-back parentheses for browsers that do not support display of ruby annotations using the ruby element. One <rp> element should enclose each of the opening and closing parentheses that wrap the rt element that contains the annotation's text.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rp}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' rt(class = "test", "Example")
-rt <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<rt ", attrs, ">")
-x <- paste0(s_tag, ..., "</rt>")
-}else{
-x <- paste0("<rt>", ..., "</rt>")
+#' rp(attr = list(class = "test"))
+rp <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rp'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element rtc
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <rt> HTML tag.
+#'
+#' The <rt> HTML element specifies the ruby text component of a ruby annotation, which is used to provide pronunciation, translation, or transliteration information for East Asian typography. The <rt> element must always be contained within a ruby element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rt}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' rtc(class = "test", "Example")
-rtc <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<rtc ", attrs, ">")
-x <- paste0(s_tag, ..., "</rtc>")
-}else{
-x <- paste0("<rtc>", ..., "</rtc>")
+#' rt(attr = list(class = "test"))
+rt <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rt'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element ruby
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <ruby> HTML tag.
+#'
+#' The <ruby> HTML element represents small annotations that are rendered above, below, or next to base text, usually used for showing the pronunciation of East Asian characters. It can also be used for annotating other kinds of text, but this usage is less common.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ruby}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' ruby(class = "test", "Example")
-ruby <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<ruby ", attrs, ">")
-x <- paste0(s_tag, ..., "</ruby>")
-}else{
-x <- paste0("<ruby>", ..., "</ruby>")
-}
-return(x)
+#' ruby(attr = list(class = "test"))
+ruby <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ruby'))
 }
 
-#' Generate HTML tag for element s
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <s> HTML tag.
+#'
+#' The <s> HTML element renders text with a strikethrough, or a line through it. Use the <s> element to represent things that are no longer relevant or no longer accurate. However, <s> is not appropriate when indicating document edits; for that, use the del and ins elements, as appropriate.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/s}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' s(class = "test", "Example")
-s <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<s ", attrs, ">")
-x <- paste0(s_tag, ..., "</s>")
-}else{
-x <- paste0("<s>", ..., "</s>")
-}
-return(x)
+#' s(attr = list(class = "test"))
+s <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 's'))
 }
 
-#' Generate HTML tag for element samp
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <samp> HTML tag.
+#'
+#' The <samp> HTML element is used to enclose inline text which represents sample (or quoted) output from a computer program. Its contents are typically rendered using the browser's default monospaced font (such as Courier or Lucida Console).
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/samp}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' samp(class = "test", "Example")
-samp <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<samp ", attrs, ">")
-x <- paste0(s_tag, ..., "</samp>")
-}else{
-x <- paste0("<samp>", ..., "</samp>")
-}
-return(x)
+#' samp(attr = list(class = "test"))
+samp <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'samp'))
 }
 
-#' Generate HTML tag for element script
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param async A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param crossorigin A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param defer A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param integrity A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param nomodule A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param nonce A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param referrerpolicy A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <script> HTML tag.
+#'
+#' The <script> HTML element is used to embed executable code or data; this is typically used to embed or refer to JavaScript code. The <script> element can also be used with other languages, such as WebGL's GLSL shader programming language and JSON.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' script(class = "test", "Example")
-script <- function(
-...,
-accesskey = NULL,
-async = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-crossorigin = NULL,
-defer = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-integrity = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-nomodule = NULL,
-nonce = NULL,
-part = NULL,
-referrerpolicy = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "async" = async, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "crossorigin" = crossorigin, "defer" = defer, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "integrity" = integrity, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "nomodule" = nomodule, "nonce" = nonce, "part" = part, "referrerpolicy" = referrerpolicy, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<script ", attrs, ">")
-x <- paste0(s_tag, ..., "</script>")
-}else{
-x <- paste0("<script>", ..., "</script>")
+#' script(attr = list(class = "test"))
+script <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'script'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element section
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <section> HTML tag.
+#'
+#' The <section> HTML element represents a generic standalone section of a document, which doesn't have a more specific semantic element to represent it. Sections should always have a heading, with very few exceptions.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/section}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' section(class = "test", "Example")
-section <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<section ", attrs, ">")
-x <- paste0(s_tag, ..., "</section>")
-}else{
-x <- paste0("<section>", ..., "</section>")
+#' section(attr = list(class = "test"))
+section <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'section'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element select
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocomplete A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autofocus A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param multiple A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param required A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param size A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <select> HTML tag.
+#'
+#' The <select> HTML element represents a control that provides a menu of options:
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' select(class = "test", "Example")
-select <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-autocomplete = NULL,
-autofocus = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-disabled = NULL,
-draggable = NULL,
-form = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-multiple = NULL,
-name = NULL,
-part = NULL,
-required = NULL,
-size = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "autocomplete" = autocomplete, "autofocus" = autofocus, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "disabled" = disabled, "draggable" = draggable, "form" = form, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "multiple" = multiple, "name" = name, "part" = part, "required" = required, "size" = size, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<select ", attrs, ">")
-x <- paste0(s_tag, ..., "</select>")
-}else{
-x <- paste0("<select>", ..., "</select>")
-}
-return(x)
+#' select(attr = list(class = "test"))
+select <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'select'))
 }
 
-#' Generate HTML tag for element slot
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <slot> HTML tag.
+#'
+#' The <slot> HTML element—part of the Web Components technology suite—is a placeholder inside a web component that you can fill with your own markup, which lets you create separate DOM trees and present them together.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' slot(class = "test", "Example")
-slot <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-name = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "name" = name, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<slot ", attrs, ">")
-x <- paste0(s_tag, ..., "</slot>")
-}else{
-x <- paste0("<slot>", ..., "</slot>")
-}
-return(x)
+#' slot(attr = list(class = "test"))
+slot <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'slot'))
 }
 
-#' Generate HTML tag for element small
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <small> HTML tag.
+#'
+#' The <small> HTML element represents side-comments and small print, like copyright and legal text, independent of its styled presentation. By default, it renders text within it one font-size smaller, such as from small to x-small.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/small}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' small(class = "test", "Example")
-small <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<small ", attrs, ">")
-x <- paste0(s_tag, ..., "</small>")
-}else{
-x <- paste0("<small>", ..., "</small>")
+#' small(attr = list(class = "test"))
+small <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'small'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element source
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param media A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param sizes A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param srcset A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <source> HTML tag.
+#'
+#' The <source> HTML element specifies multiple media resources for the picture, the audio element, or the video element. It is an empty element, meaning that it has no content and does not have a closing tag. It is commonly used to offer the same media content in multiple file formats in order to provide compatibility with a broad range of browsers given their differing support for image file formats and media file formats.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' source(class = "test")
-source <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-media = NULL,
-part = NULL,
-sizes = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-srcset = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "media" = media, "part" = part, "sizes" = sizes, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "srcset" = srcset, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<source ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<source>"
+#' source(attr = list(class = "test"))
+source <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'source'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element span
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <span> HTML tag.
+#'
+#' The <span> HTML element is a generic inline container for phrasing content, which does not inherently represent anything. It can be used to group elements for styling purposes (using the class or id attributes), or because they share attribute values, such as lang. It should be used only when no other semantic element is appropriate. <span> is very much like a div element, but div is a block-level element whereas a <span> is an inline element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/span}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' span(class = "test", "Example")
-span <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<span ", attrs, ">")
-x <- paste0(s_tag, ..., "</span>")
-}else{
-x <- paste0("<span>", ..., "</span>")
-}
-return(x)
+#' span(attr = list(class = "test"))
+span <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'span'))
 }
 
-#' Generate HTML tag for element strong
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <strong> HTML tag.
+#'
+#' The <strong> HTML element indicates that its contents have strong importance, seriousness, or urgency. Browsers typically render the contents in bold type.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/strong}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' strong(class = "test", "Example")
-strong <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<strong ", attrs, ">")
-x <- paste0(s_tag, ..., "</strong>")
-}else{
-x <- paste0("<strong>", ..., "</strong>")
+#' strong(attr = list(class = "test"))
+strong <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'strong'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element style
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param media A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param nonce A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param type A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <style> HTML tag.
+#'
+#' The <style> HTML element contains style information for a document, or part of a document. It contains CSS, which is applied to the contents of the document containing the <style> element.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' style(class = "test", "Example")
-style <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-media = NULL,
-nonce = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-type = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "media" = media, "nonce" = nonce, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "type" = type, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<style ", attrs, ">")
-x <- paste0(s_tag, ..., "</style>")
-}else{
-x <- paste0("<style>", ..., "</style>")
+#' style(attr = list(class = "test"))
+style <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'style'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element sub
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <sub> HTML tag.
+#'
+#' The <sub> HTML element specifies inline text which should be displayed as subscript for solely typographical reasons. Subscripts are typically rendered with a lowered baseline using smaller text.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sub}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' sub(class = "test", "Example")
-sub <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<sub ", attrs, ">")
-x <- paste0(s_tag, ..., "</sub>")
-}else{
-x <- paste0("<sub>", ..., "</sub>")
-}
-return(x)
+#' sub(attr = list(class = "test"))
+sub <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'sub'))
 }
 
-#' Generate HTML tag for element summary
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <summary> HTML tag.
+#'
+#' The <summary> HTML element specifies a summary, caption, or legend for a details element's disclosure box. Clicking the <summary> element toggles the state of the parent <details> element open and closed.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/summary}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' summary(class = "test", "Example")
-summary <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<summary ", attrs, ">")
-x <- paste0(s_tag, ..., "</summary>")
-}else{
-x <- paste0("<summary>", ..., "</summary>")
-}
-return(x)
+#' summary(attr = list(class = "test"))
+summary <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'summary'))
 }
 
-#' Generate HTML tag for element sup
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <sup> HTML tag.
+#'
+#' The <sup> HTML element specifies inline text which is to be displayed as superscript for solely typographical reasons. Superscripts are usually rendered with a raised baseline using smaller text.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sup}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' sup(class = "test", "Example")
-sup <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<sup ", attrs, ">")
-x <- paste0(s_tag, ..., "</sup>")
-}else{
-x <- paste0("<sup>", ..., "</sup>")
+#' sup(attr = list(class = "test"))
+sup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'sup'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element table
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <table> HTML tag.
+#'
+#' The <table> HTML element represents tabular data — that is, information presented in a two-dimensional table comprised of rows and columns of cells containing data.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' table(class = "test", "Example")
-table <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<table ", attrs, ">")
-x <- paste0(s_tag, ..., "</table>")
-}else{
-x <- paste0("<table>", ..., "</table>")
+#' table(attr = list(class = "test"))
+table <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'table'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element tbody
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <tbody> HTML tag.
+#'
+#' The <tbody> HTML element encapsulates a set of table rows (tr elements), indicating that they comprise the body of the table (table).
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' tbody(class = "test", "Example")
-tbody <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<tbody ", attrs, ">")
-x <- paste0(s_tag, ..., "</tbody>")
-}else{
-x <- paste0("<tbody>", ..., "</tbody>")
+#' tbody(attr = list(class = "test"))
+tbody <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tbody'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element td
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param colspan A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param headers A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param rowspan A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <td> HTML tag.
+#'
+#' The <td> HTML element defines a cell of a table that contains data. It participates in the table model.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' td(class = "test", "Example")
-td <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-colspan = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-headers = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-rowspan = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "colspan" = colspan, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "headers" = headers, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "rowspan" = rowspan, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<td ", attrs, ">")
-x <- paste0(s_tag, ..., "</td>")
-}else{
-x <- paste0("<td>", ..., "</td>")
+#' td(attr = list(class = "test"))
+td <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'td'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element template
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <template> HTML tag.
+#'
+#' The <template> HTML element is a mechanism for holding HTML that is not to be rendered immediately when a page is loaded but may be instantiated subsequently during runtime using JavaScript.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' template(class = "test", "Example")
-template <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<template ", attrs, ">")
-x <- paste0(s_tag, ..., "</template>")
-}else{
-x <- paste0("<template>", ..., "</template>")
-}
-return(x)
+#' template(attr = list(class = "test"))
+template <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'template'))
 }
 
-#' Generate HTML tag for element textarea
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocomplete A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autofocus A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param cols A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disabled A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param form A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param maxlength A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param minlength A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param name A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param placeholder A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param readonly A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param required A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param rows A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param wrap A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <textarea> HTML tag.
+#'
+#' The <textarea> HTML element represents a multi-line plain-text editing control, useful when you want to allow users to enter a sizeable amount of free-form text, for example a comment on a review or feedback form.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/textarea}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' textarea(class = "test", "Example")
-textarea <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-autocomplete = NULL,
-autofocus = NULL,
-class = NULL,
-cols = NULL,
-contenteditable = NULL,
-dir = NULL,
-disabled = NULL,
-draggable = NULL,
-form = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-maxlength = NULL,
-minlength = NULL,
-name = NULL,
-part = NULL,
-placeholder = NULL,
-readonly = NULL,
-required = NULL,
-rows = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-wrap = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "autocomplete" = autocomplete, "autofocus" = autofocus, "class" = class, "cols" = cols, "contenteditable" = contenteditable, "dir" = dir, "disabled" = disabled, "draggable" = draggable, "form" = form, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "maxlength" = maxlength, "minlength" = minlength, "name" = name, "part" = part, "placeholder" = placeholder, "readonly" = readonly, "required" = required, "rows" = rows, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, "wrap" = wrap, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<textarea ", attrs, ">")
-x <- paste0(s_tag, ..., "</textarea>")
-}else{
-x <- paste0("<textarea>", ..., "</textarea>")
+#' textarea(attr = list(class = "test"))
+textarea <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'textarea'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element tfoot
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <tfoot> HTML tag.
+#'
+#' The <tfoot> HTML element defines a set of rows summarizing the columns of the table.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tfoot}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' tfoot(class = "test", "Example")
-tfoot <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<tfoot ", attrs, ">")
-x <- paste0(s_tag, ..., "</tfoot>")
-}else{
-x <- paste0("<tfoot>", ..., "</tfoot>")
+#' tfoot(attr = list(class = "test"))
+tfoot <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tfoot'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element th
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param abbr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param colspan A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param headers A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param rowspan A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param scope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <th> HTML tag.
+#'
+#' The <th> HTML element defines a cell as header of a group of table cells. The exact nature of this group is defined by the scope and headers attributes.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' th(class = "test", "Example")
-th <- function(
-...,
-abbr = NULL,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-colspan = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-headers = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-rowspan = NULL,
-scope = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("abbr" = abbr, "accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "colspan" = colspan, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "headers" = headers, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "rowspan" = rowspan, "scope" = scope, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<th ", attrs, ">")
-x <- paste0(s_tag, ..., "</th>")
-}else{
-x <- paste0("<th>", ..., "</th>")
-}
-return(x)
+#' th(attr = list(class = "test"))
+th <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'th'))
 }
 
-#' Generate HTML tag for element thead
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <thead> HTML tag.
+#'
+#' The <thead> HTML element defines a set of rows defining the head of the columns of the table.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' thead(class = "test", "Example")
-thead <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<thead ", attrs, ">")
-x <- paste0(s_tag, ..., "</thead>")
-}else{
-x <- paste0("<thead>", ..., "</thead>")
-}
-return(x)
+#' thead(attr = list(class = "test"))
+thead <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'thead'))
 }
 
-#' Generate HTML tag for element time
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param datetime A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <time> HTML tag.
+#'
+#' The <time> HTML element represents a specific period in time. It may include the datetime attribute to translate dates into machine-readable format, allowing for better search engine results or custom features such as reminders.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' time(class = "test", "Example")
-time <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-datetime = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "datetime" = datetime, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<time ", attrs, ">")
-x <- paste0(s_tag, ..., "</time>")
-}else{
-x <- paste0("<time>", ..., "</time>")
-}
-return(x)
+#' time(attr = list(class = "test"))
+time <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'time'))
 }
 
-#' Generate HTML tag for element title
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <title> HTML tag.
+#'
+#' The <title> HTML element defines the document's title that is shown in a Browser's title bar or a page's tab. It only contains text; tags within the element are ignored.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/title}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' title(class = "test", "Example")
-title <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<title ", attrs, ">")
-x <- paste0(s_tag, ..., "</title>")
-}else{
-x <- paste0("<title>", ..., "</title>")
-}
-return(x)
+#' title(attr = list(class = "test"))
+title <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'title'))
 }
 
-#' Generate HTML tag for element tr
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <tr> HTML tag.
+#'
+#' The <tr> HTML element defines a row of cells in a table. The row's cells can then be established using a mix of td (data cell) and th (header cell) elements.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' tr(class = "test", "Example")
-tr <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<tr ", attrs, ">")
-x <- paste0(s_tag, ..., "</tr>")
-}else{
-x <- paste0("<tr>", ..., "</tr>")
+#' tr(attr = list(class = "test"))
+tr <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tr'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element track
-#'
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param default A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param kind A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param label A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param srclang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <track> HTML tag.
+#'
+#' The <track> HTML element is used as a child of the media elements, audio and video. It lets you specify timed text tracks (or time-based data), for example to automatically handle subtitles. The tracks are formatted in WebVTT format (.vtt files) — Web Video Text Tracks.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' track(class = "test")
-track <- function(
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-default = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-kind = NULL,
-label = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-srclang = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "default" = default, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "kind" = kind, "label" = label, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "srclang" = srclang, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<track ", attrs, ">")
-x <- s_tag
-}else{
-x <- "<track>"
+#' track(attr = list(class = "test"))
+track <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'track'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element u
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <u> HTML tag.
+#'
+#' The <u> HTML element represents a span of inline text which should be rendered in a way that indicates that it has a non-textual annotation. This is rendered by default as a simple solid underline, but may be altered using CSS.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/u}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' u(class = "test", "Example")
-u <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<u ", attrs, ">")
-x <- paste0(s_tag, ..., "</u>")
-}else{
-x <- paste0("<u>", ..., "</u>")
-}
-return(x)
+#' u(attr = list(class = "test"))
+u <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'u'))
 }
 
-#' Generate HTML tag for element ul
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <ul> HTML tag.
+#'
+#' The <ul> HTML element represents an unordered list of items, typically rendered as a bulleted list.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ul}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' ul(class = "test", "Example")
-ul <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<ul ", attrs, ">")
-x <- paste0(s_tag, ..., "</ul>")
-}else{
-x <- paste0("<ul>", ..., "</ul>")
+#' ul(attr = list(class = "test"))
+ul <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ul'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element var
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <var> HTML tag.
+#'
+#' The <var> HTML element represents the name of a variable in a mathematical expression or a programming context. It's typically presented using an italicized version of the current typeface, although that behavior is browser-dependent.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/var}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' var(class = "test", "Example")
-var <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<var ", attrs, ">")
-x <- paste0(s_tag, ..., "</var>")
-}else{
-x <- paste0("<var>", ..., "</var>")
+#' var(attr = list(class = "test"))
+var <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'var'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element video
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autoPictureInPicture A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autoplay A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param buffered A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param controls A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param controlslist A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param crossorigin A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param currentTime A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disablePictureInPicture A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param disableRemotePlayback A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param duration A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param height A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param intrinsicsize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param loop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param muted A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param playsinline A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param poster A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param preload A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param src A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param width A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <video> HTML tag.
+#'
+#' The <video> HTML element embeds a media player which supports video playback into the document. You can use <video> for audio content as well, but the audio element may provide a more appropriate user experience.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
 #' @return A HTML tag string.
 #' @examples
-#' video(class = "test", "Example")
-video <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-autoPictureInPicture = NULL,
-autoplay = NULL,
-buffered = NULL,
-class = NULL,
-contenteditable = NULL,
-controls = NULL,
-controlslist = NULL,
-crossorigin = NULL,
-currentTime = NULL,
-dir = NULL,
-disablePictureInPicture = NULL,
-disableRemotePlayback = NULL,
-draggable = NULL,
-duration = NULL,
-height = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-intrinsicsize = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-loop = NULL,
-muted = NULL,
-part = NULL,
-playsinline = NULL,
-poster = NULL,
-preload = NULL,
-slot = NULL,
-spellcheck = NULL,
-src = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-width = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "autoPictureInPicture" = autoPictureInPicture, "autoplay" = autoplay, "buffered" = buffered, "class" = class, "contenteditable" = contenteditable, "controls" = controls, "controlslist" = controlslist, "crossorigin" = crossorigin, "currentTime" = currentTime, "dir" = dir, "disablePictureInPicture" = disablePictureInPicture, "disableRemotePlayback" = disableRemotePlayback, "draggable" = draggable, "duration" = duration, "height" = height, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "intrinsicsize" = intrinsicsize, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "loop" = loop, "muted" = muted, "part" = part, "playsinline" = playsinline, "poster" = poster, "preload" = preload, "slot" = slot, "spellcheck" = spellcheck, "src" = src, "style" = style, "tabindex" = tabindex, "title" = title, "width" = width, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<video ", attrs, ">")
-x <- paste0(s_tag, ..., "</video>")
-}else{
-x <- paste0("<video>", ..., "</video>")
+#' video(attr = list(class = "test"))
+video <- function(..., attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'video'))
 }
-return(x)
-}
 
-#' Generate HTML tag for element wbr
-#'
-#' @param ... A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.
-#' @param accesskey A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param autocapitalize A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param class A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param contenteditable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param dir A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param draggable A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param hidden A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param id A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param inputmode A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param is A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemid A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemprop A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemref A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemscope A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param itemtype A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param lang A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param part A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param slot A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param spellcheck A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param style A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param tabindex A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param title A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
-#' @param custom_attr A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.
+#'Generate the <wbr> HTML tag.
+#'
+#' The <wbr> HTML element represents a word break opportunity—a position within text where the browser may optionally break a line, though its line-breaking rules would not otherwise create a break at that location.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
 #' @return A HTML tag string.
 #' @examples
-#' wbr(class = "test", "Example")
-wbr <- function(
-...,
-accesskey = NULL,
-autocapitalize = NULL,
-class = NULL,
-contenteditable = NULL,
-dir = NULL,
-draggable = NULL,
-hidden = NULL,
-id = NULL,
-inputmode = NULL,
-is = NULL,
-itemid = NULL,
-itemprop = NULL,
-itemref = NULL,
-itemscope = NULL,
-itemtype = NULL,
-lang = NULL,
-part = NULL,
-slot = NULL,
-spellcheck = NULL,
-style = NULL,
-tabindex = NULL,
-title = NULL,
-custom_attr = NULL){
-attr_values <- c("accesskey" = accesskey, "autocapitalize" = autocapitalize, "class" = class, "contenteditable" = contenteditable, "dir" = dir, "draggable" = draggable, "hidden" = hidden, "id" = id, "inputmode" = inputmode, "is" = is, "itemid" = itemid, "itemprop" = itemprop, "itemref" = itemref, "itemscope" = itemscope, "itemtype" = itemtype, "lang" = lang, "part" = part, "slot" = slot, "spellcheck" = spellcheck, "style" = style, "tabindex" = tabindex, "title" = title, custom_attr)
-attr_values <- attr_values[is.null(attr_values) == FALSE]
-if(length(attr_values) > 0){
-attr_names <- names(attr_values)
-attr_values <- paste0('"', attr_values, '"')
-attrs <- paste0(paste(attr_names, attr_values, sep = "="), collapse = " ")
-s_tag <- paste0("<wbr ", attrs, ">")
-x <- paste0(s_tag, ..., "</wbr>")
-}else{
-x <- paste0("<wbr>", ..., "</wbr>")
+#' wbr(attr = list(class = "test"))
+wbr <- function(attr = NULL, separate = FALSE, collapse = ''){
+  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'wbr'))
 }
-return(x)
-}
-

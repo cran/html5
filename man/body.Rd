@@ -2,144 +2,28 @@
 % Please edit documentation in R/html5.R
 \name{body}
 \alias{body}
-\title{Generate HTML tag for element body}
+\title{Generate the <body> HTML tag.}
 \usage{
-body(
-  ...,
-  accesskey = NULL,
-  autocapitalize = NULL,
-  class = NULL,
-  contenteditable = NULL,
-  dir = NULL,
-  draggable = NULL,
-  hidden = NULL,
-  id = NULL,
-  inputmode = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  onafterprint = NULL,
-  onbeforeprint = NULL,
-  onbeforeunload = NULL,
-  onblur = NULL,
-  onerror = NULL,
-  onfocus = NULL,
-  onhashchange = NULL,
-  onlanguagechange = NULL,
-  onload = NULL,
-  onmessage = NULL,
-  onoffline = NULL,
-  ononline = NULL,
-  onpopstate = NULL,
-  onredo = NULL,
-  onresize = NULL,
-  onstorage = NULL,
-  onundo = NULL,
-  onunload = NULL,
-  part = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  style = NULL,
-  tabindex = NULL,
-  title = NULL,
-  custom_attr = NULL
-)
+body(..., attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{...}{A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.}
+\item{...}{A string or vector of content to pass to the tag.}
 
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onafterprint}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onbeforeprint}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onbeforeunload}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onblur}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onerror}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onfocus}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onhashchange}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onlanguagechange}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onload}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onmessage}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onoffline}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{ononline}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onpopstate}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onredo}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onresize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onstorage}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onundo}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{onunload}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element body
+The <body> HTML element represents the content of an HTML document. There can be only one <body> element in a document.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body}.
 }
 \examples{
-body(class = "test", "Example")
+body(attr = list(class = "test"))
 }

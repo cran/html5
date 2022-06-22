@@ -2,93 +2,26 @@
 % Please edit documentation in R/html5.R
 \name{base}
 \alias{base}
-\title{Generate HTML tag for element base}
+\title{Generate the <base> HTML tag.}
 \usage{
-base(
-  accesskey = NULL,
-  autocapitalize = NULL,
-  class = NULL,
-  contenteditable = NULL,
-  dir = NULL,
-  draggable = NULL,
-  hidden = NULL,
-  href = NULL,
-  id = NULL,
-  inputmode = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  part = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  style = NULL,
-  tabindex = NULL,
-  target = NULL,
-  title = NULL,
-  custom_attr = NULL
-)
+base(attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.}
 
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{href}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{target}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element base
+The <base> HTML element specifies the base URL to use for all relative URLs in a document. There can be only one <base> element in a document.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base}.
 }
 \examples{
-base(class = "test")
+base(attr = list(class = "test"))
 }

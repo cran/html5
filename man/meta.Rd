@@ -2,99 +2,26 @@
 % Please edit documentation in R/html5.R
 \name{meta}
 \alias{meta}
-\title{Generate HTML tag for element meta}
+\title{Generate the <meta> HTML tag.}
 \usage{
-meta(
-  accesskey = NULL,
-  autocapitalize = NULL,
-  charset = NULL,
-  class = NULL,
-  content = NULL,
-  contenteditable = NULL,
-  dir = NULL,
-  draggable = NULL,
-  hidden = NULL,
-  http_equiv = NULL,
-  id = NULL,
-  inputmode = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  name = NULL,
-  part = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  style = NULL,
-  tabindex = NULL,
-  title = NULL,
-  custom_attr = NULL
-)
+meta(attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.}
 
-\item{charset}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{content}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{http_equiv}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{name}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element meta
+The <meta> HTML element represents Metadata that cannot be represented by other HTML meta-related elements, like base, link, script, style or title.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta}.
 }
 \examples{
-meta(class = "test")
+meta(attr = list(class = "test"))
 }

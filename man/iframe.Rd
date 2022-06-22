@@ -2,123 +2,28 @@
 % Please edit documentation in R/html5.R
 \name{iframe}
 \alias{iframe}
-\title{Generate HTML tag for element iframe}
+\title{Generate the <iframe> HTML tag.}
 \usage{
-iframe(
-  accesskey = NULL,
-  allow = NULL,
-  allowfullscreen = NULL,
-  allowpaymentrequest = NULL,
-  autocapitalize = NULL,
-  class = NULL,
-  contenteditable = NULL,
-  csp = NULL,
-  dir = NULL,
-  draggable = NULL,
-  height = NULL,
-  hidden = NULL,
-  id = NULL,
-  inputmode = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  loading = NULL,
-  name = NULL,
-  part = NULL,
-  referrerpolicy = NULL,
-  sandbox = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  src = NULL,
-  srcdoc = NULL,
-  style = NULL,
-  tabindex = NULL,
-  title = NULL,
-  width = NULL,
-  custom_attr = NULL
-)
+iframe(..., attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{...}{A string or vector of content to pass to the tag.}
 
-\item{allow}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{allowfullscreen}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
-\item{allowpaymentrequest}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{csp}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{height}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{loading}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{name}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{referrerpolicy}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{sandbox}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{src}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{srcdoc}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{width}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element iframe
+The <iframe> HTML element represents a nested browsing context, embedding another HTML page into the current one.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe}.
 }
 \examples{
-iframe(class = "test")
+iframe(attr = list(class = "test"))
 }

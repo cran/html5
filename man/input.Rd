@@ -2,183 +2,26 @@
 % Please edit documentation in R/html5.R
 \name{input}
 \alias{input}
-\title{Generate HTML tag for element input}
+\title{Generate the <input> HTML tag.}
 \usage{
-input(
-  accept = NULL,
-  accesskey = NULL,
-  alt = NULL,
-  autocapitalize = NULL,
-  autocomplete = NULL,
-  autofocus = NULL,
-  capture = NULL,
-  checked = NULL,
-  class = NULL,
-  contenteditable = NULL,
-  dir = NULL,
-  dirname = NULL,
-  disabled = NULL,
-  draggable = NULL,
-  form = NULL,
-  formaction = NULL,
-  formenctype = NULL,
-  formmethod = NULL,
-  formnovalidate = NULL,
-  formtarget = NULL,
-  height = NULL,
-  hidden = NULL,
-  id = NULL,
-  inputmode = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  list = NULL,
-  max = NULL,
-  maxlength = NULL,
-  min = NULL,
-  minlength = NULL,
-  multiple = NULL,
-  name = NULL,
-  part = NULL,
-  pattern = NULL,
-  placeholder = NULL,
-  readonly = NULL,
-  required = NULL,
-  size = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  src = NULL,
-  step = NULL,
-  style = NULL,
-  tabindex = NULL,
-  title = NULL,
-  type = NULL,
-  value = NULL,
-  width = NULL,
-  custom_attr = NULL
-)
+input(attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{accept}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.}
 
-\item{alt}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{autocomplete}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{autofocus}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{capture}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{checked}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dirname}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{disabled}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{form}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formaction}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formenctype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formmethod}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formnovalidate}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{formtarget}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{height}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{list}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{max}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{maxlength}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{min}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{minlength}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{multiple}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{name}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{pattern}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{placeholder}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{readonly}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{required}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{size}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{src}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{step}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{type}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{value}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{width}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element input
+The <input> HTML element is used to create interactive controls for web-based forms in order to accept data from the user; a wide variety of types of input data and control widgets are available, depending on the device and user agent. The <input> element is one of the most powerful and complex in all of HTML due to the sheer number of combinations of input types and attributes.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input}.
 }
 \examples{
-input(class = "test")
+input(attr = list(class = "test"))
 }

@@ -2,147 +2,28 @@
 % Please edit documentation in R/html5.R
 \name{video}
 \alias{video}
-\title{Generate HTML tag for element video}
+\title{Generate the <video> HTML tag.}
 \usage{
-video(
-  ...,
-  accesskey = NULL,
-  autocapitalize = NULL,
-  autoPictureInPicture = NULL,
-  autoplay = NULL,
-  buffered = NULL,
-  class = NULL,
-  contenteditable = NULL,
-  controls = NULL,
-  controlslist = NULL,
-  crossorigin = NULL,
-  currentTime = NULL,
-  dir = NULL,
-  disablePictureInPicture = NULL,
-  disableRemotePlayback = NULL,
-  draggable = NULL,
-  duration = NULL,
-  height = NULL,
-  hidden = NULL,
-  id = NULL,
-  inputmode = NULL,
-  intrinsicsize = NULL,
-  is = NULL,
-  itemid = NULL,
-  itemprop = NULL,
-  itemref = NULL,
-  itemscope = NULL,
-  itemtype = NULL,
-  lang = NULL,
-  loop = NULL,
-  muted = NULL,
-  part = NULL,
-  playsinline = NULL,
-  poster = NULL,
-  preload = NULL,
-  slot = NULL,
-  spellcheck = NULL,
-  src = NULL,
-  style = NULL,
-  tabindex = NULL,
-  title = NULL,
-  width = NULL,
-  custom_attr = NULL
-)
+video(..., attr = NULL, separate = FALSE, collapse = "")
 }
 \arguments{
-\item{...}{A string or strings of permitted content for this HTML element tag. The user is responsible for determining what is permissible.}
+\item{...}{A string or vector of content to pass to the tag.}
 
-\item{accesskey}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
 
-\item{autocapitalize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
-\item{autoPictureInPicture}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{autoplay}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{buffered}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{class}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{contenteditable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{controls}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{controlslist}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{crossorigin}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{currentTime}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{dir}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{disablePictureInPicture}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{disableRemotePlayback}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{draggable}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{duration}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{height}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{hidden}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{id}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{inputmode}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{intrinsicsize}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{is}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemid}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemprop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemref}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemscope}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{itemtype}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{lang}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{loop}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{muted}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{part}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{playsinline}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{poster}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{preload}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{slot}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{spellcheck}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{src}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{style}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{tabindex}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{title}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{width}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
-
-\item{custom_attr}{A string of permitted content for this HTML attribute. The user is responsible for determining what is permissible.}
+\item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Generate HTML tag for element video
+The <video> HTML element embeds a media player which supports video playback into the document. You can use <video> for audio content as well, but the audio element may provide a more appropriate user experience.
+}
+\details{
+Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video}.
 }
 \examples{
-video(class = "test", "Example")
+video(attr = list(class = "test"))
 }
