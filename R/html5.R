@@ -48,25 +48,55 @@
 #' @examples
 #' attr_helper(attr = list(class = 'test'))
 attr_helper <- function (attr, separate = FALSE){
-  if(separate){
-    attr_names <- names(attr)
-    attr <- lapply(attr_names, function(x){
-      if(x %in% boolean_attributes){
-        i <- rep_len(x, length(attr[[x]]))
-        i[attr[[x]] == FALSE] <- ""
-        return(i)
-      }else{
-        return(paste0(x, "=", paste0('"', attr[[x]], '"')))
-      }
-    })
-    i <- seq_len(length(attr))
-    return(eval(str2expression(paste0("paste0(", paste0("attr[[", i, "]]", collapse = ", \" \", "), ")"))))
+  if(length(attr) > 0){
+    if(separate){
+      attr_names <- names(attr)
+      attr <- lapply(attr_names, function(x){
+        if(x %in% boolean_attributes){
+          i <- rep_len(x, length(attr[[x]]))
+          i[attr[[x]] == FALSE] <- ""
+          return(i)
+        }else{
+          return(paste0(x, "=", paste0('"', attr[[x]], '"')))
+        }
+      })
+      attr <- attr[attr != ""]
+      i <- seq_len(length(attr))
+      return(eval(str2expression(paste0("paste0(", paste0("attr[[", i, "]]", collapse = ", \" \", "), ")"))))
+    }else{
+      booleans <- names(attr) %in% boolean_attributes
+      attr <- attr[(booleans & attr == TRUE)|!(booleans)]
+      attr_names <- names(attr)
+      booleans <- attr_names %in% boolean_attributes
+      attr[booleans] <- attr_names[booleans]
+      attr[!booleans] <- paste0(attr_names[!booleans], "=", paste0("\"", attr[!booleans], "\""))
+      return(paste0(attr, collapse = " "))
+    }
   }else{
-    attr_names <- names(attr)
-    attr <- attr[!(attr_names %in% boolean_attributes & attr == FALSE)]
-    return(paste0(names(attr), "=", paste0("\"", attr, "\""), collapse = " "))
+    return("")
   }
 }
+
+# attr_helper <- function (attr, separate = FALSE){
+#   if(separate){
+#     attr_names <- names(attr)
+#     attr <- lapply(attr_names, function(x){
+#       if(x %in% boolean_attributes){
+#         i <- rep_len(x, length(attr[[x]]))
+#         i[attr[[x]] == FALSE] <- ""
+#         return(i)
+#       }else{
+#         return(paste0(x, "=", paste0('"', attr[[x]], '"')))
+#       }
+#     })
+#     i <- seq_len(length(attr))
+#     return(eval(str2expression(paste0("paste0(", paste0("attr[[", i, "]]", collapse = ", \" \", "), ")"))))
+#   }else{
+#     attr_names <- names(attr)
+#     attr <- attr[!(attr_names %in% boolean_attributes & attr == FALSE)]
+#     return(paste0(names(attr), "=", paste0("\"", attr, "\""), collapse = " "))
+#   }
+# }
 
 #' Helper function to generate HTML5 strings
 #'
@@ -81,35 +111,37 @@ attr_helper <- function (attr, separate = FALSE){
 #' tag_helper(attr = list(class = 'test'), tag = 'a')
 tag_helper <- function (..., attr = NULL, separate = FALSE, collapse = "", accepts_content = TRUE, tag)
 {
-  return(if (accepts_content) {
-    if (separate) {
-      if (is.null(attr)) {
-        paste0("<", tag, ">", c(...), "</", tag, ">", collapse = collapse)
+  return(
+    if (accepts_content) {
+      if (separate) {
+        if (is.null(attr)) {
+          paste0("<", tag, ">", c(...), "</", tag, ">", collapse = collapse)
+        } else {
+          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", c(...), "</", tag, ">", collapse = collapse)
+        }
       } else {
-        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", c(...), "</", tag, ">", collapse = collapse)
+        if (is.null(attr)) {
+          paste0("<", tag, ">", ..., "</", tag, ">", collapse = collapse)
+        } else {
+          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", ..., "</", tag, ">", collapse = collapse)
+        }
       }
     } else {
-      if (is.null(attr)) {
-        paste0("<", tag, ">", ..., "</", tag, ">", collapse = collapse)
+      if (separate) {
+        if (is.null(attr)) {
+          paste0("<", tag, ">", collapse = collapse)
+        } else {
+          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
+        }
       } else {
-        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", ..., "</", tag, ">", collapse = collapse)
+        if (is.null(attr)) {
+          paste0("<", tag, ">", collapse = collapse)
+        } else {
+          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
+        }
       }
     }
-  } else {
-    if (separate) {
-      if (is.null(attr)) {
-        paste0("<", tag, ">", collapse = collapse)
-      } else {
-        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
-      }
-    } else {
-      if (is.null(attr)) {
-        paste0("<", tag, ">", collapse = collapse)
-      } else {
-        paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
-      }
-    }
-  })
+  )
 }
 
 #' Generate HTML document string with properly declared DOCTYPE.
