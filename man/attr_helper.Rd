@@ -10,15 +10,13 @@ attr_helper(attr, separate = FALSE)
 \item{attr}{A named list, names are attribute names and values are attribute values.
 If the items of the list and the items of the tag content are longer than length 1,
 the items for the attribute will correspond with the items of the content in the same position.
-For example, when generating a series of option tags, you might want to pass a different id attribute for each
-item of the content, you can pass the vector of ids in the named list of attributes.
-If an attribute is a boolean attribute and the value is the R FALSE value, the boolean attribute will not be
-added.}
+(ex. when generating a series of option tags, you might want to pass a different id attribute for each
+item of the content, you can pass the vector of ids in the named list of attributes)}
 
 \item{separate}{TRUE/FALSE, if TRUE, returns a vector for creating multiple tags at once.}
 }
 \value{
-A HTML tag string.
+A HTML attribute string.
 }
 \description{
 Helper function to generate HTML5 attribute strings

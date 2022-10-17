@@ -4,7 +4,13 @@
 \alias{button}
 \title{Generate the <button> HTML tag.}
 \usage{
-button(..., attr = NULL, separate = FALSE, collapse = "")
+button(
+  ...,
+  attr = NULL,
+  separate = FALSE,
+  collapse = "",
+  formatted = html5_vars$formatted
+)
 }
 \arguments{
 \item{...}{A string or vector of content to pass to the tag.}
@@ -14,12 +20,14 @@ button(..., attr = NULL, separate = FALSE, collapse = "")
 \item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
 \item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
+
+\item{formatted}{TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE}
 }
 \value{
 A HTML tag string.
 }
 \description{
-The <button> HTML element represents a clickable button, used to submit forms or anywhere in a document for accessible, standard button functionality.
+The <button> HTML element is an interactive element activated by a user with a mouse, keyboard, finger, voice command, or other assistive technology. Once activated, it then performs a programmable action, such as submitting a form or opening a dialog.
 }
 \details{
 Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button}.

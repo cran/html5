@@ -4,7 +4,13 @@
 \alias{footer}
 \title{Generate the <footer> HTML tag.}
 \usage{
-footer(..., attr = NULL, separate = FALSE, collapse = "")
+footer(
+  ...,
+  attr = NULL,
+  separate = FALSE,
+  collapse = "",
+  formatted = html5_vars$formatted
+)
 }
 \arguments{
 \item{...}{A string or vector of content to pass to the tag.}
@@ -14,12 +20,14 @@ footer(..., attr = NULL, separate = FALSE, collapse = "")
 \item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
 \item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
+
+\item{formatted}{TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE}
 }
 \value{
 A HTML tag string.
 }
 \description{
-The <footer> HTML element represents a footer for its nearest sectioning content or sectioning root element. A <footer> typically contains information about the author of the section, copyright data or links to related documents.
+The <footer> HTML element represents a footer for its nearest ancestor sectioning content or sectioning root element. A <footer> typically contains information about the author of the section, copyright data or links to related documents.
 }
 \details{
 Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/footer}.

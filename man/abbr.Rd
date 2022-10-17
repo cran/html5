@@ -4,7 +4,13 @@
 \alias{abbr}
 \title{Generate the <abbr> HTML tag.}
 \usage{
-abbr(..., attr = NULL, separate = FALSE, collapse = "")
+abbr(
+  ...,
+  attr = NULL,
+  separate = FALSE,
+  collapse = "",
+  formatted = html5_vars$formatted
+)
 }
 \arguments{
 \item{...}{A string or vector of content to pass to the tag.}
@@ -14,12 +20,14 @@ abbr(..., attr = NULL, separate = FALSE, collapse = "")
 \item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
 \item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
+
+\item{formatted}{TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE}
 }
 \value{
 A HTML tag string.
 }
 \description{
-The <abbr> HTML element represents an abbreviation or acronym; the optional title attribute can provide an expansion or description for the abbreviation. If present, title must contain this full description and nothing else.
+The <abbr> HTML element represents an abbreviation or acronym.
 }
 \details{
 Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr}.

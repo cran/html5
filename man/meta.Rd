@@ -4,7 +4,12 @@
 \alias{meta}
 \title{Generate the <meta> HTML tag.}
 \usage{
-meta(attr = NULL, separate = FALSE, collapse = "")
+meta(
+  attr = NULL,
+  separate = FALSE,
+  collapse = "",
+  formatted = html5_vars$formatted
+)
 }
 \arguments{
 \item{attr}{A named list or named vector, names are attribute names and values are attribute values.}
@@ -12,6 +17,8 @@ meta(attr = NULL, separate = FALSE, collapse = "")
 \item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.}
 
 \item{collapse}{A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.}
+
+\item{formatted}{TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE}
 }
 \value{
 A HTML tag string.

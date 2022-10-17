@@ -26,7 +26,9 @@
 #   "selected",
 #   "truespeed"
 # )
-# save(boolean_attributes, file = "/home//r_packages/html5/R/sysdata.rda")
+# html5_vars <- new.env()
+# html5_vars$formatted <- FALSE
+# save(boolean_attributes, html5_vars, file = "/home/tim/r_packages/html5/R/sysdata.rda")
 
 #' Vector of boolean attributes
 #'
@@ -34,71 +36,121 @@
 #' @format A vector
 "boolean_attributes"
 
+#' Environment to set formatted to TRUE/FALSE
+#'
+#' @description Environment to set formatted to TRUE/FALSE
+#' @format An environment
+"html5_vars"
+
 #' Helper function to generate HTML5 attribute strings
 #'
 #' @param attr A named list, names are attribute names and values are attribute values.
-#' If the items of the list and the items of the tag content are longer than length 1,
-#' the items for the attribute will correspond with the items of the content in the same position.
-#' For example, when generating a series of option tags, you might want to pass a different id attribute for each
-#' item of the content, you can pass the vector of ids in the named list of attributes.
-#' If an attribute is a boolean attribute and the value is the R FALSE value, the boolean attribute will not be
-#' added.
+  #' If the items of the list and the items of the tag content are longer than length 1,
+  #' the items for the attribute will correspond with the items of the content in the same position.
+  #' (ex. when generating a series of option tags, you might want to pass a different id attribute for each
+  #' item of the content, you can pass the vector of ids in the named list of attributes)
 #' @param separate TRUE/FALSE, if TRUE, returns a vector for creating multiple tags at once.
-#' @return A HTML tag string.
+#' @return A HTML attribute string.
 #' @examples
 #' attr_helper(attr = list(class = 'test'))
-attr_helper <- function (attr, separate = FALSE){
-  if(length(attr) > 0){
-    if(separate){
-      attr_names <- names(attr)
-      attr <- lapply(attr_names, function(x){
-        if(x %in% boolean_attributes){
-          i <- rep_len(x, length(attr[[x]]))
-          i[attr[[x]] == FALSE] <- ""
-          return(i)
-        }else{
-          return(paste0(x, "=", paste0('"', attr[[x]], '"')))
+attr_helper <- function (attr, separate = FALSE)
+{
+    if (length(attr) > 0) {
+        if (separate) {
+            attr_names <- names(attr)
+            attr <- lapply(attr_names, function(x) {
+                if (x %in% boolean_attributes) {
+                  i <- rep_len(x, length(attr[[x]]))
+                  i[attr[[x]] == FALSE] <- ""
+                  return(i)
+                }
+                else {
+                  return(paste0(x, "=", paste0("\"", attr[[x]], "\"")))
+                }
+            })
+            attr <- attr[attr != ""]
+            i <- seq_len(length(attr))
+            return(eval(str2expression(paste0("paste0(' ', paste0(", paste0("attr[[", i, "]]", collapse = ", \" \", "), "))"))))
         }
-      })
-      attr <- attr[attr != ""]
-      i <- seq_len(length(attr))
-      return(eval(str2expression(paste0("paste0(", paste0("attr[[", i, "]]", collapse = ", \" \", "), ")"))))
-    }else{
-      booleans <- names(attr) %in% boolean_attributes
-      attr <- attr[(booleans & attr == TRUE)|!(booleans)]
-      attr_names <- names(attr)
-      booleans <- attr_names %in% boolean_attributes
-      attr[booleans] <- attr_names[booleans]
-      attr[!booleans] <- paste0(attr_names[!booleans], "=", paste0("\"", attr[!booleans], "\""))
-      return(paste0(attr, collapse = " "))
+        else {
+            booleans <- names(attr) %in% boolean_attributes
+            attr <- attr[(booleans & attr == TRUE) | !(booleans)]
+            attr_names <- names(attr)
+            booleans <- attr_names %in% boolean_attributes
+            attr[booleans] <- attr_names[booleans]
+            attr[!booleans] <- paste0(attr_names[!booleans], "=", paste0("\"", attr[!booleans], "\""))
+            return(paste0(" ", paste0(attr, collapse = " ")))
+        }
     }
-  }else{
-    return("")
-  }
+    else {
+        return("")
+    }
 }
 
-# attr_helper <- function (attr, separate = FALSE){
-#   if(separate){
-#     attr_names <- names(attr)
-#     attr <- lapply(attr_names, function(x){
-#       if(x %in% boolean_attributes){
-#         i <- rep_len(x, length(attr[[x]]))
-#         i[attr[[x]] == FALSE] <- ""
-#         return(i)
-#       }else{
-#         return(paste0(x, "=", paste0('"', attr[[x]], '"')))
-#       }
-#     })
-#     i <- seq_len(length(attr))
-#     return(eval(str2expression(paste0("paste0(", paste0("attr[[", i, "]]", collapse = ", \" \", "), ")"))))
-#   }else{
-#     attr_names <- names(attr)
-#     attr <- attr[!(attr_names %in% boolean_attributes & attr == FALSE)]
-#     return(paste0(names(attr), "=", paste0("\"", attr, "\""), collapse = " "))
-#   }
-# }
+#' Helper function to generate HTML5 strings with end tags
+#'
+#' @param ... A string or strings or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE. If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param tag A string. The HTML5 tag to return.
+#' @return A HTML tag string.
+#' @examples
+#' tag_helper(attr = list(class = 'test'), tag = 'a')
+tag_helper <- function (..., attr = NULL, separate = FALSE, collapse = "", tag)
+{
+    return(if (separate) {
+        if (is.null(attr)) {
+            paste0("<", tag, ">", c(...), "</", tag, ">", collapse = collapse)
+        } else {
+            paste0("<", tag, attr_helper(as.list(attr), separate = separate), ">", c(...), "</", tag, ">", collapse = collapse)
+        }
+    } else {
+        if (is.null(attr)) {
+            paste0("<", tag, ">", ..., "</", tag, ">", collapse = collapse)
+        } else {
+            paste0("<", tag, attr_helper(as.list(attr), separate = separate), ">", ..., "</", tag, ">", collapse = collapse)
+        }
+    })
+}
 
-#' Helper function to generate HTML5 strings
+#' Helper function to generate HTML5 strings without end tags
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE. If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param tag A string. The HTML5 tag to return.
+#' @return A HTML tag string.
+#' @examples
+#' empty_tag_helper(attr = list(class = 'test'), tag = 'meta')
+empty_tag_helper <- function (attr = NULL, separate = FALSE, collapse = "", tag)
+{
+    return(if (separate) {
+        if (is.null(attr)) {
+            paste0("<", tag, ">", collapse = collapse)
+        } else {
+            paste0("<", tag, attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
+        }
+    } else {
+        if (is.null(attr)) {
+            paste0("<", tag, ">", collapse = collapse)
+        } else {
+            paste0("<", tag, attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
+        }
+    })
+}
+
+#' Add new lines and tabs to format HTML content.
+#'
+#' @param x A string of HTML to format.
+#' @return A HTML string formatted with new lines and tabs.
+content_indenter <- function (x)
+{
+    x <- strsplit(x, "\n", fixed = TRUE)[[1]]
+    return(paste0("\n\t", x, collapse = ""))
+}
+
+#' Helper function to generate HTML5 strings formatted with new lines and tabs
 #'
 #' @param ... A string or strings or vector of content to pass to the tag.
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
@@ -108,40 +160,32 @@ attr_helper <- function (attr, separate = FALSE){
 #' @param tag A string. The HTML5 tag to return.
 #' @return A HTML tag string.
 #' @examples
-#' tag_helper(attr = list(class = 'test'), tag = 'a')
-tag_helper <- function (..., attr = NULL, separate = FALSE, collapse = "", accepts_content = TRUE, tag)
+#' formatted_tag_helper(attr = list(class = 'test'), tag = 'a')
+formatted_tag_helper <- function (..., attr = NULL, separate = FALSE, collapse = "", accepts_content = TRUE, tag)
 {
-  return(
+    content <- as.character(c(...))
+    open_tag <- paste0("<", tag, attr_helper(as.list(attr), separate = separate), ">")
     if (accepts_content) {
-      if (separate) {
-        if (is.null(attr)) {
-          paste0("<", tag, ">", c(...), "</", tag, ">", collapse = collapse)
-        } else {
-          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", c(...), "</", tag, ">", collapse = collapse)
+        if (length(content) == 0 | all(nchar(content) == 0)) {
+            content <- "\n"
         }
-      } else {
-        if (is.null(attr)) {
-          paste0("<", tag, ">", ..., "</", tag, ">", collapse = collapse)
-        } else {
-          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", ..., "</", tag, ">", collapse = collapse)
+        else {
+            if (separate) {
+                content <- unlist(lapply(content, content_indenter), use.names = FALSE)
+            }
+            else {
+                content <- content_indenter(paste0(content, collapse = ""))
+            }
+            content <- paste0(content, "\n")
         }
-      }
-    } else {
-      if (separate) {
-        if (is.null(attr)) {
-          paste0("<", tag, ">", collapse = collapse)
-        } else {
-          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
-        }
-      } else {
-        if (is.null(attr)) {
-          paste0("<", tag, ">", collapse = collapse)
-        } else {
-          paste0("<", tag, " ", attr_helper(as.list(attr), separate = separate), ">", collapse = collapse)
-        }
-      }
+        end_tag <- paste0("</", tag, ">\n")
     }
-  )
+    else {
+        open_tag <- paste0(open_tag, "\n")
+        content <- ""
+        end_tag <- ""
+    }
+    return(paste0(open_tag, content, end_tag, collapse = collapse))
 }
 
 #' Generate HTML document string with properly declared DOCTYPE.
@@ -151,7 +195,7 @@ tag_helper <- function (..., attr = NULL, separate = FALSE, collapse = "", accep
 #' @return A HTML document string.
 doctype <- function (..., doctype = "html")
 {
-  return(paste0("<!DOCTYPE ", doctype, ">", ...))
+    return(paste0("<!DOCTYPE ", doctype, ">\n", ...))
 }
 
 #'Generate the <a> HTML tag.
@@ -164,16 +208,21 @@ doctype <- function (..., doctype = "html")
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' a(attr = list(class = "test"))
-a <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'a'))
+a <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'a'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'a'))
+	}
 }
 
 #'Generate the <abbr> HTML tag.
 #'
-#' The <abbr> HTML element represents an abbreviation or acronym; the optional title attribute can provide an expansion or description for the abbreviation. If present, title must contain this full description and nothing else.
+#' The <abbr> HTML element represents an abbreviation or acronym.
 #'
 #' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr}.
 #'
@@ -181,11 +230,16 @@ a <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' abbr(attr = list(class = "test"))
-abbr <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'abbr'))
+abbr <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'abbr'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'abbr'))
+	}
 }
 
 #'Generate the <address> HTML tag.
@@ -198,11 +252,38 @@ abbr <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' address(attr = list(class = "test"))
-address <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'address'))
+address <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'address'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'address'))
+	}
+}
+
+#'Generate the <applet> HTML tag.
+#'
+#' The obsolete HTML Applet Element (<applet>) embeds a Java applet into the document; this element has been deprecated in favor of object.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/applet}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' applet(attr = list(class = "test"))
+applet <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'applet'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'applet'))
+	}
 }
 
 #'Generate the <area> HTML tag.
@@ -214,11 +295,16 @@ address <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' area(attr = list(class = "test"))
-area <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'area'))
+area <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'area'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'area'))
+	}
 }
 
 #'Generate the <article> HTML tag.
@@ -231,11 +317,16 @@ area <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' article(attr = list(class = "test"))
-article <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'article'))
+article <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'article'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'article'))
+	}
 }
 
 #'Generate the <aside> HTML tag.
@@ -248,11 +339,16 @@ article <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' aside(attr = list(class = "test"))
-aside <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'aside'))
+aside <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'aside'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'aside'))
+	}
 }
 
 #'Generate the <audio> HTML tag.
@@ -265,11 +361,16 @@ aside <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' audio(attr = list(class = "test"))
-audio <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'audio'))
+audio <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'audio'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'audio'))
+	}
 }
 
 #'Generate the <b> HTML tag.
@@ -282,11 +383,16 @@ audio <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' b(attr = list(class = "test"))
-b <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'b'))
+b <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'b'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'b'))
+	}
 }
 
 #'Generate the <base> HTML tag.
@@ -298,11 +404,16 @@ b <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' base(attr = list(class = "test"))
-base <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'base'))
+base <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'base'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'base'))
+	}
 }
 
 #'Generate the <bdi> HTML tag.
@@ -315,11 +426,16 @@ base <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' bdi(attr = list(class = "test"))
-bdi <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'bdi'))
+bdi <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'bdi'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'bdi'))
+	}
 }
 
 #'Generate the <bdo> HTML tag.
@@ -332,11 +448,16 @@ bdi <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' bdo(attr = list(class = "test"))
-bdo <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'bdo'))
+bdo <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'bdo'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'bdo'))
+	}
 }
 
 #'Generate the <blockquote> HTML tag.
@@ -349,11 +470,16 @@ bdo <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' blockquote(attr = list(class = "test"))
-blockquote <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'blockquote'))
+blockquote <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'blockquote'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'blockquote'))
+	}
 }
 
 #'Generate the <body> HTML tag.
@@ -366,11 +492,16 @@ blockquote <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' body(attr = list(class = "test"))
-body <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'body'))
+body <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'body'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'body'))
+	}
 }
 
 #'Generate the <br> HTML tag.
@@ -382,16 +513,21 @@ body <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' br(attr = list(class = "test"))
-br <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'br'))
+br <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'br'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'br'))
+	}
 }
 
 #'Generate the <button> HTML tag.
 #'
-#' The <button> HTML element represents a clickable button, used to submit forms or anywhere in a document for accessible, standard button functionality.
+#' The <button> HTML element is an interactive element activated by a user with a mouse, keyboard, finger, voice command, or other assistive technology. Once activated, it then performs a programmable action, such as submitting a form or opening a dialog.
 #'
 #' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button}.
 #'
@@ -399,11 +535,16 @@ br <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' button(attr = list(class = "test"))
-button <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'button'))
+button <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'button'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'button'))
+	}
 }
 
 #'Generate the <canvas> HTML tag.
@@ -416,11 +557,16 @@ button <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' canvas(attr = list(class = "test"))
-canvas <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'canvas'))
+canvas <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'canvas'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'canvas'))
+	}
 }
 
 #'Generate the <caption> HTML tag.
@@ -433,11 +579,16 @@ canvas <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' caption(attr = list(class = "test"))
-caption <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'caption'))
+caption <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'caption'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'caption'))
+	}
 }
 
 #'Generate the <cite> HTML tag.
@@ -450,11 +601,16 @@ caption <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' cite(attr = list(class = "test"))
-cite <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'cite'))
+cite <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'cite'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'cite'))
+	}
 }
 
 #'Generate the <code> HTML tag.
@@ -467,11 +623,16 @@ cite <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' code(attr = list(class = "test"))
-code <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'code'))
+code <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'code'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'code'))
+	}
 }
 
 #'Generate the <col> HTML tag.
@@ -483,11 +644,16 @@ code <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' col(attr = list(class = "test"))
-col <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'col'))
+col <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'col'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'col'))
+	}
 }
 
 #'Generate the <colgroup> HTML tag.
@@ -500,11 +666,38 @@ col <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' colgroup(attr = list(class = "test"))
-colgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'colgroup'))
+colgroup <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'colgroup'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'colgroup'))
+	}
+}
+
+#'Generate the <content> HTML tag.
+#'
+#' The <content> HTML element—an obsolete part of the Web Components suite of technologies—was used inside of Shadow DOM as an insertion point, and wasn't meant to be used in ordinary HTML. It has now been replaced by the slot element, which creates a point in the DOM at which a shadow DOM can be inserted.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/content}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' content(attr = list(class = "test"))
+content <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'content'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'content'))
+	}
 }
 
 #'Generate the <data> HTML tag.
@@ -517,11 +710,16 @@ colgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' data(attr = list(class = "test"))
-data <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'data'))
+data <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'data'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'data'))
+	}
 }
 
 #'Generate the <datalist> HTML tag.
@@ -534,11 +732,16 @@ data <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' datalist(attr = list(class = "test"))
-datalist <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'datalist'))
+datalist <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'datalist'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'datalist'))
+	}
 }
 
 #'Generate the <dd> HTML tag.
@@ -551,11 +754,16 @@ datalist <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' dd(attr = list(class = "test"))
-dd <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dd'))
+dd <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'dd'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dd'))
+	}
 }
 
 #'Generate the <del> HTML tag.
@@ -568,11 +776,16 @@ dd <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' del(attr = list(class = "test"))
-del <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'del'))
+del <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'del'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'del'))
+	}
 }
 
 #'Generate the <details> HTML tag.
@@ -585,11 +798,16 @@ del <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' details(attr = list(class = "test"))
-details <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'details'))
+details <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'details'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'details'))
+	}
 }
 
 #'Generate the <dfn> HTML tag.
@@ -602,11 +820,16 @@ details <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' dfn(attr = list(class = "test"))
-dfn <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dfn'))
+dfn <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'dfn'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dfn'))
+	}
 }
 
 #'Generate the <dialog> HTML tag.
@@ -619,11 +842,16 @@ dfn <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' dialog(attr = list(class = "test"))
-dialog <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dialog'))
+dialog <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'dialog'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dialog'))
+	}
 }
 
 #'Generate the <div> HTML tag.
@@ -636,11 +864,16 @@ dialog <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' div(attr = list(class = "test"))
-div <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'div'))
+div <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'div'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'div'))
+	}
 }
 
 #'Generate the <dl> HTML tag.
@@ -653,11 +886,16 @@ div <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' dl(attr = list(class = "test"))
-dl <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dl'))
+dl <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'dl'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dl'))
+	}
 }
 
 #'Generate the <dt> HTML tag.
@@ -670,11 +908,16 @@ dl <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' dt(attr = list(class = "test"))
-dt <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dt'))
+dt <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'dt'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'dt'))
+	}
 }
 
 #'Generate the <em> HTML tag.
@@ -687,11 +930,16 @@ dt <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' em(attr = list(class = "test"))
-em <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'em'))
+em <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'em'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'em'))
+	}
 }
 
 #'Generate the <embed> HTML tag.
@@ -703,11 +951,16 @@ em <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' embed(attr = list(class = "test"))
-embed <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'embed'))
+embed <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'embed'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'embed'))
+	}
 }
 
 #'Generate the <fieldset> HTML tag.
@@ -720,11 +973,16 @@ embed <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' fieldset(attr = list(class = "test"))
-fieldset <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'fieldset'))
+fieldset <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'fieldset'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'fieldset'))
+	}
 }
 
 #'Generate the <figcaption> HTML tag.
@@ -737,11 +995,16 @@ fieldset <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' figcaption(attr = list(class = "test"))
-figcaption <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'figcaption'))
+figcaption <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'figcaption'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'figcaption'))
+	}
 }
 
 #'Generate the <figure> HTML tag.
@@ -754,16 +1017,21 @@ figcaption <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' figure(attr = list(class = "test"))
-figure <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'figure'))
+figure <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'figure'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'figure'))
+	}
 }
 
 #'Generate the <footer> HTML tag.
 #'
-#' The <footer> HTML element represents a footer for its nearest sectioning content or sectioning root element. A <footer> typically contains information about the author of the section, copyright data or links to related documents.
+#' The <footer> HTML element represents a footer for its nearest ancestor sectioning content or sectioning root element. A <footer> typically contains information about the author of the section, copyright data or links to related documents.
 #'
 #' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/footer}.
 #'
@@ -771,11 +1039,16 @@ figure <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' footer(attr = list(class = "test"))
-footer <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'footer'))
+footer <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'footer'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'footer'))
+	}
 }
 
 #'Generate the <form> HTML tag.
@@ -788,11 +1061,16 @@ footer <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' form(attr = list(class = "test"))
-form <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'form'))
+form <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'form'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'form'))
+	}
 }
 
 #'Generate the <h1> HTML tag.
@@ -805,11 +1083,16 @@ form <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' h1(attr = list(class = "test"))
-h1 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h1'))
+h1 <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'h1'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h1'))
+	}
 }
 
 #'Generate the <h2> HTML tag.
@@ -822,11 +1105,16 @@ h1 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' h2(attr = list(class = "test"))
-h2 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h2'))
+h2 <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'h2'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h2'))
+	}
 }
 
 #'Generate the <h3> HTML tag.
@@ -839,11 +1127,16 @@ h2 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' h3(attr = list(class = "test"))
-h3 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h3'))
+h3 <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'h3'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h3'))
+	}
 }
 
 #'Generate the <h4> HTML tag.
@@ -856,11 +1149,16 @@ h3 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' h4(attr = list(class = "test"))
-h4 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h4'))
+h4 <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'h4'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h4'))
+	}
 }
 
 #'Generate the <h5> HTML tag.
@@ -873,11 +1171,16 @@ h4 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' h5(attr = list(class = "test"))
-h5 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h5'))
+h5 <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'h5'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h5'))
+	}
 }
 
 #'Generate the <h6> HTML tag.
@@ -890,11 +1193,16 @@ h5 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' h6(attr = list(class = "test"))
-h6 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h6'))
+h6 <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'h6'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'h6'))
+	}
 }
 
 #'Generate the <head> HTML tag.
@@ -907,11 +1215,16 @@ h6 <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' head(attr = list(class = "test"))
-head <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'head'))
+head <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'head'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'head'))
+	}
 }
 
 #'Generate the <header> HTML tag.
@@ -924,28 +1237,16 @@ head <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' header(attr = list(class = "test"))
-header <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'header'))
-}
-
-#'Generate the <hgroup> HTML tag.
-#'
-#' The <hgroup> HTML element represents a multi-level heading for a section of a document. It groups a set of <h1>–<h6> elements.
-#'
-#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/hgroup}.
-#'
-#' @param ... A string or vector of content to pass to the tag.
-#' @param attr A named list or named vector, names are attribute names and values are attribute values.
-#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
-#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
-#' @return A HTML tag string.
-#' @examples
-#' hgroup(attr = list(class = "test"))
-hgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'hgroup'))
+header <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'header'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'header'))
+	}
 }
 
 #'Generate the <hr> HTML tag.
@@ -957,11 +1258,16 @@ hgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' hr(attr = list(class = "test"))
-hr <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'hr'))
+hr <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'hr'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'hr'))
+	}
 }
 
 #'Generate the <html> HTML tag.
@@ -974,11 +1280,16 @@ hr <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' html(attr = list(class = "test"))
-html <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'html'))
+html <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'html'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'html'))
+	}
 }
 
 #'Generate the <i> HTML tag.
@@ -991,11 +1302,16 @@ html <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' i(attr = list(class = "test"))
-i <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'i'))
+i <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'i'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'i'))
+	}
 }
 
 #'Generate the <iframe> HTML tag.
@@ -1008,11 +1324,16 @@ i <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' iframe(attr = list(class = "test"))
-iframe <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'iframe'))
+iframe <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'iframe'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'iframe'))
+	}
 }
 
 #'Generate the <img> HTML tag.
@@ -1024,11 +1345,16 @@ iframe <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' img(attr = list(class = "test"))
-img <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'img'))
+img <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'img'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'img'))
+	}
 }
 
 #'Generate the <input> HTML tag.
@@ -1040,11 +1366,16 @@ img <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' input(attr = list(class = "test"))
-input <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'input'))
+input <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'input'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'input'))
+	}
 }
 
 #'Generate the <ins> HTML tag.
@@ -1057,11 +1388,16 @@ input <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' ins(attr = list(class = "test"))
-ins <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ins'))
+ins <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'ins'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ins'))
+	}
 }
 
 #'Generate the <kbd> HTML tag.
@@ -1074,11 +1410,37 @@ ins <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' kbd(attr = list(class = "test"))
-kbd <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'kbd'))
+kbd <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'kbd'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'kbd'))
+	}
+}
+
+#'Generate the <keygen> HTML tag.
+#'
+#' The <keygen> HTML element exists to facilitate generation of key material, and submission of the public key as part of an HTML form. This mechanism is designed for use with Web-based certificate management systems. It is expected that the <keygen> element will be used in an HTML form along with other information needed to construct a certificate request, and that the result of the process will be a signed certificate.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/keygen}.
+#'
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
+#' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' keygen(attr = list(class = "test"))
+keygen <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'keygen'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'keygen'))
+	}
 }
 
 #'Generate the <label> HTML tag.
@@ -1091,11 +1453,16 @@ kbd <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' label(attr = list(class = "test"))
-label <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'label'))
+label <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'label'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'label'))
+	}
 }
 
 #'Generate the <legend> HTML tag.
@@ -1108,11 +1475,16 @@ label <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' legend(attr = list(class = "test"))
-legend <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'legend'))
+legend <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'legend'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'legend'))
+	}
 }
 
 #'Generate the <li> HTML tag.
@@ -1125,11 +1497,16 @@ legend <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' li(attr = list(class = "test"))
-li <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'li'))
+li <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'li'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'li'))
+	}
 }
 
 #'Generate the <link> HTML tag.
@@ -1141,11 +1518,16 @@ li <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' link(attr = list(class = "test"))
-link <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'link'))
+link <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'link'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'link'))
+	}
 }
 
 #'Generate the <main> HTML tag.
@@ -1158,11 +1540,16 @@ link <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' main(attr = list(class = "test"))
-main <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'main'))
+main <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'main'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'main'))
+	}
 }
 
 #'Generate the <map> HTML tag.
@@ -1175,11 +1562,16 @@ main <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' map(attr = list(class = "test"))
-map <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'map'))
+map <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'map'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'map'))
+	}
 }
 
 #'Generate the <mark> HTML tag.
@@ -1192,16 +1584,21 @@ map <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' mark(attr = list(class = "test"))
-mark <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'mark'))
+mark <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'mark'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'mark'))
+	}
 }
 
 #'Generate the <menu> HTML tag.
 #'
-#' The <menu> HTML element is a semantic alternative to ul. It represents an unordered list of items (represented by li elements), each of these represent a link or other command that the user can activate.
+#' The <menu> HTML element is described in the HTML specification as a semantic alternative to ul, but treated by browsers (and exposed through the accessibility tree) as no different than ul. It represents an unordered list of items (which are represented by li elements).
 #'
 #' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/menu}.
 #'
@@ -1209,11 +1606,38 @@ mark <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' menu(attr = list(class = "test"))
-menu <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'menu'))
+menu <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'menu'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'menu'))
+	}
+}
+
+#'Generate the <menuitem> HTML tag.
+#'
+#' The <menuitem> HTML element represents a command that a user is able to invoke through a popup menu. This includes context menus, as well as menus that might be attached to a menu button.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/menuitem}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' menuitem(attr = list(class = "test"))
+menuitem <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'menuitem'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'menuitem'))
+	}
 }
 
 #'Generate the <meta> HTML tag.
@@ -1225,11 +1649,16 @@ menu <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' meta(attr = list(class = "test"))
-meta <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'meta'))
+meta <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'meta'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'meta'))
+	}
 }
 
 #'Generate the <meter> HTML tag.
@@ -1242,11 +1671,16 @@ meta <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' meter(attr = list(class = "test"))
-meter <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'meter'))
+meter <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'meter'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'meter'))
+	}
 }
 
 #'Generate the <nav> HTML tag.
@@ -1259,11 +1693,16 @@ meter <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' nav(attr = list(class = "test"))
-nav <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'nav'))
+nav <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'nav'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'nav'))
+	}
 }
 
 #'Generate the <noscript> HTML tag.
@@ -1276,11 +1715,16 @@ nav <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' noscript(attr = list(class = "test"))
-noscript <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'noscript'))
+noscript <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'noscript'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'noscript'))
+	}
 }
 
 #'Generate the <object> HTML tag.
@@ -1293,11 +1737,16 @@ noscript <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' object(attr = list(class = "test"))
-object <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'object'))
+object <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'object'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'object'))
+	}
 }
 
 #'Generate the <ol> HTML tag.
@@ -1310,11 +1759,16 @@ object <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' ol(attr = list(class = "test"))
-ol <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ol'))
+ol <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'ol'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ol'))
+	}
 }
 
 #'Generate the <optgroup> HTML tag.
@@ -1327,11 +1781,16 @@ ol <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' optgroup(attr = list(class = "test"))
-optgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'optgroup'))
+optgroup <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'optgroup'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'optgroup'))
+	}
 }
 
 #'Generate the <option> HTML tag.
@@ -1344,11 +1803,16 @@ optgroup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' option(attr = list(class = "test"))
-option <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'option'))
+option <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'option'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'option'))
+	}
 }
 
 #'Generate the <output> HTML tag.
@@ -1361,11 +1825,16 @@ option <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' output(attr = list(class = "test"))
-output <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'output'))
+output <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'output'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'output'))
+	}
 }
 
 #'Generate the <p> HTML tag.
@@ -1378,11 +1847,16 @@ output <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' p(attr = list(class = "test"))
-p <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'p'))
+p <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'p'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'p'))
+	}
 }
 
 #'Generate the <param> HTML tag.
@@ -1394,11 +1868,16 @@ p <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' param(attr = list(class = "test"))
-param <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'param'))
+param <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'param'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'param'))
+	}
 }
 
 #'Generate the <picture> HTML tag.
@@ -1411,16 +1890,21 @@ param <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' picture(attr = list(class = "test"))
-picture <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'picture'))
+picture <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'picture'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'picture'))
+	}
 }
 
 #'Generate the <pre> HTML tag.
 #'
-#' The <pre> HTML element represents preformatted text which is to be presented exactly as written in the HTML file. The text is typically rendered using a non-proportional, or "monospaced, font. Whitespace inside this element is displayed as written.
+#' The <pre> HTML element represents preformatted text which is to be presented exactly as written in the HTML file. The text is typically rendered using a non-proportional, or monospaced, font. Whitespace inside this element is displayed as written.
 #'
 #' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/pre}.
 #'
@@ -1428,11 +1912,16 @@ picture <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' pre(attr = list(class = "test"))
-pre <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'pre'))
+pre <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'pre'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'pre'))
+	}
 }
 
 #'Generate the <progress> HTML tag.
@@ -1445,11 +1934,16 @@ pre <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' progress(attr = list(class = "test"))
-progress <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'progress'))
+progress <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'progress'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'progress'))
+	}
 }
 
 #'Generate the <q> HTML tag.
@@ -1462,11 +1956,38 @@ progress <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' q(attr = list(class = "test"))
-q <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'q'))
+q <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'q'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'q'))
+	}
+}
+
+#'Generate the <rb> HTML tag.
+#'
+#' The <rb> HTML element is used to delimit the base text component of a ruby annotation, i.e. the text that is being annotated. One <rb> element should wrap each separate atomic segment of the base text.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rb}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' rb(attr = list(class = "test"))
+rb <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'rb'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rb'))
+	}
 }
 
 #'Generate the <rp> HTML tag.
@@ -1479,11 +2000,16 @@ q <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' rp(attr = list(class = "test"))
-rp <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rp'))
+rp <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'rp'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rp'))
+	}
 }
 
 #'Generate the <rt> HTML tag.
@@ -1496,11 +2022,38 @@ rp <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' rt(attr = list(class = "test"))
-rt <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rt'))
+rt <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'rt'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rt'))
+	}
+}
+
+#'Generate the <rtc> HTML tag.
+#'
+#' The <rtc> HTML element embraces semantic annotations of characters presented in a ruby of rb elements used inside of ruby element. rb elements can have both pronunciation (rt) and semantic (rtc) annotations.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rtc}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' rtc(attr = list(class = "test"))
+rtc <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'rtc'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'rtc'))
+	}
 }
 
 #'Generate the <ruby> HTML tag.
@@ -1513,11 +2066,16 @@ rt <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' ruby(attr = list(class = "test"))
-ruby <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ruby'))
+ruby <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'ruby'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ruby'))
+	}
 }
 
 #'Generate the <s> HTML tag.
@@ -1530,11 +2088,16 @@ ruby <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' s(attr = list(class = "test"))
-s <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 's'))
+s <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 's'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 's'))
+	}
 }
 
 #'Generate the <samp> HTML tag.
@@ -1547,11 +2110,16 @@ s <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' samp(attr = list(class = "test"))
-samp <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'samp'))
+samp <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'samp'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'samp'))
+	}
 }
 
 #'Generate the <script> HTML tag.
@@ -1564,11 +2132,16 @@ samp <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' script(attr = list(class = "test"))
-script <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'script'))
+script <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'script'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'script'))
+	}
 }
 
 #'Generate the <section> HTML tag.
@@ -1581,16 +2154,21 @@ script <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' section(attr = list(class = "test"))
-section <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'section'))
+section <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'section'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'section'))
+	}
 }
 
 #'Generate the <select> HTML tag.
 #'
-#' The <select> HTML element represents a control that provides a menu of options:
+#' The <select> HTML element represents a control that provides a menu of options.
 #'
 #' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select}.
 #'
@@ -1598,11 +2176,38 @@ section <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' select(attr = list(class = "test"))
-select <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'select'))
+select <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'select'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'select'))
+	}
+}
+
+#'Generate the <shadow> HTML tag.
+#'
+#' The <shadow> HTML element—an obsolete part of the Web Components technology suite—was intended to be used as a shadow DOM insertion point. You might have used it if you have created multiple shadow roots under a shadow host. It is not useful in ordinary HTML.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/shadow}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' shadow(attr = list(class = "test"))
+shadow <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'shadow'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'shadow'))
+	}
 }
 
 #'Generate the <slot> HTML tag.
@@ -1615,11 +2220,16 @@ select <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' slot(attr = list(class = "test"))
-slot <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'slot'))
+slot <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'slot'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'slot'))
+	}
 }
 
 #'Generate the <small> HTML tag.
@@ -1632,27 +2242,37 @@ slot <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' small(attr = list(class = "test"))
-small <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'small'))
+small <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'small'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'small'))
+	}
 }
 
 #'Generate the <source> HTML tag.
 #'
-#' The <source> HTML element specifies multiple media resources for the picture, the audio element, or the video element. It is an empty element, meaning that it has no content and does not have a closing tag. It is commonly used to offer the same media content in multiple file formats in order to provide compatibility with a broad range of browsers given their differing support for image file formats and media file formats.
+#' The <source> HTML element specifies multiple media resources for the picture, the audio element, or the video element. It is a void element, meaning that it has no content and does not have a closing tag. It is commonly used to offer the same media content in multiple file formats in order to provide compatibility with a broad range of browsers given their differing support for image file formats and media file formats.
 #'
 #' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source}.
 #'
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' source(attr = list(class = "test"))
-source <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'source'))
+source <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'source'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'source'))
+	}
 }
 
 #'Generate the <span> HTML tag.
@@ -1665,11 +2285,16 @@ source <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' span(attr = list(class = "test"))
-span <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'span'))
+span <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'span'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'span'))
+	}
 }
 
 #'Generate the <strong> HTML tag.
@@ -1682,11 +2307,16 @@ span <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' strong(attr = list(class = "test"))
-strong <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'strong'))
+strong <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'strong'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'strong'))
+	}
 }
 
 #'Generate the <style> HTML tag.
@@ -1699,11 +2329,16 @@ strong <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' style(attr = list(class = "test"))
-style <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'style'))
+style <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'style'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'style'))
+	}
 }
 
 #'Generate the <sub> HTML tag.
@@ -1716,11 +2351,16 @@ style <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' sub(attr = list(class = "test"))
-sub <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'sub'))
+sub <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'sub'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'sub'))
+	}
 }
 
 #'Generate the <summary> HTML tag.
@@ -1733,11 +2373,16 @@ sub <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' summary(attr = list(class = "test"))
-summary <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'summary'))
+summary <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'summary'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'summary'))
+	}
 }
 
 #'Generate the <sup> HTML tag.
@@ -1750,11 +2395,16 @@ summary <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' sup(attr = list(class = "test"))
-sup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'sup'))
+sup <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'sup'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'sup'))
+	}
 }
 
 #'Generate the <table> HTML tag.
@@ -1767,11 +2417,16 @@ sup <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' table(attr = list(class = "test"))
-table <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'table'))
+table <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'table'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'table'))
+	}
 }
 
 #'Generate the <tbody> HTML tag.
@@ -1784,11 +2439,16 @@ table <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' tbody(attr = list(class = "test"))
-tbody <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tbody'))
+tbody <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'tbody'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tbody'))
+	}
 }
 
 #'Generate the <td> HTML tag.
@@ -1801,11 +2461,16 @@ tbody <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' td(attr = list(class = "test"))
-td <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'td'))
+td <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'td'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'td'))
+	}
 }
 
 #'Generate the <template> HTML tag.
@@ -1818,11 +2483,16 @@ td <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' template(attr = list(class = "test"))
-template <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'template'))
+template <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'template'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'template'))
+	}
 }
 
 #'Generate the <textarea> HTML tag.
@@ -1835,11 +2505,16 @@ template <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' textarea(attr = list(class = "test"))
-textarea <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'textarea'))
+textarea <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'textarea'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'textarea'))
+	}
 }
 
 #'Generate the <tfoot> HTML tag.
@@ -1852,11 +2527,16 @@ textarea <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' tfoot(attr = list(class = "test"))
-tfoot <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tfoot'))
+tfoot <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'tfoot'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tfoot'))
+	}
 }
 
 #'Generate the <th> HTML tag.
@@ -1869,11 +2549,16 @@ tfoot <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' th(attr = list(class = "test"))
-th <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'th'))
+th <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'th'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'th'))
+	}
 }
 
 #'Generate the <thead> HTML tag.
@@ -1886,11 +2571,16 @@ th <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' thead(attr = list(class = "test"))
-thead <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'thead'))
+thead <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'thead'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'thead'))
+	}
 }
 
 #'Generate the <time> HTML tag.
@@ -1903,11 +2593,16 @@ thead <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' time(attr = list(class = "test"))
-time <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'time'))
+time <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'time'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'time'))
+	}
 }
 
 #'Generate the <title> HTML tag.
@@ -1920,11 +2615,16 @@ time <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' title(attr = list(class = "test"))
-title <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'title'))
+title <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'title'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'title'))
+	}
 }
 
 #'Generate the <tr> HTML tag.
@@ -1937,11 +2637,16 @@ title <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' tr(attr = list(class = "test"))
-tr <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tr'))
+tr <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'tr'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tr'))
+	}
 }
 
 #'Generate the <track> HTML tag.
@@ -1953,11 +2658,38 @@ tr <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' track(attr = list(class = "test"))
-track <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'track'))
+track <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'track'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'track'))
+	}
+}
+
+#'Generate the <tt> HTML tag.
+#'
+#' The <tt> HTML element creates inline text which is presented using the user agent default monospace font face. This element was created for the purpose of rendering text as it would be displayed on a fixed-width display such as a teletype, text-only screen, or line printer.
+#'
+#' Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tt}.
+#'
+#' @param ... A string or vector of content to pass to the tag.
+#' @param attr A named list or named vector, names are attribute names and values are attribute values.
+#' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
+#' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
+#' @return A HTML tag string.
+#' @examples
+#' tt(attr = list(class = "test"))
+tt <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'tt'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'tt'))
+	}
 }
 
 #'Generate the <u> HTML tag.
@@ -1970,11 +2702,16 @@ track <- function(attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' u(attr = list(class = "test"))
-u <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'u'))
+u <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'u'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'u'))
+	}
 }
 
 #'Generate the <ul> HTML tag.
@@ -1987,11 +2724,16 @@ u <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' ul(attr = list(class = "test"))
-ul <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ul'))
+ul <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'ul'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'ul'))
+	}
 }
 
 #'Generate the <var> HTML tag.
@@ -2004,11 +2746,16 @@ ul <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' var(attr = list(class = "test"))
-var <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'var'))
+var <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'var'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'var'))
+	}
 }
 
 #'Generate the <video> HTML tag.
@@ -2021,11 +2768,16 @@ var <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.
 #' @param collapse A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' video(attr = list(class = "test"))
-video <- function(..., attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'video'))
+video <- function(..., attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(..., attr = attr, separate = separate, collapse = collapse, accepts_content = TRUE, tag = 'video'))
+	}else{
+		return(tag_helper(..., attr = attr, separate = separate, collapse = collapse, tag = 'video'))
+	}
 }
 
 #'Generate the <wbr> HTML tag.
@@ -2037,9 +2789,15 @@ video <- function(..., attr = NULL, separate = FALSE, collapse = ''){
 #' @param attr A named list or named vector, names are attribute names and values are attribute values.
 #' @param separate TRUE/FALSE, If TRUE, returns separate tags for each item of attr if length of that item is greater than 1; if FALSE, returns one tag.
 #' @param collapse A string. If NULL, returns a vector the same length as the longest item of attr, instead of one string.
+#' @param formatted TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE
 #' @return A HTML tag string.
 #' @examples
 #' wbr(attr = list(class = "test"))
-wbr <- function(attr = NULL, separate = FALSE, collapse = ''){
-  return(tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'wbr'))
+wbr <- function(attr = NULL, separate = FALSE, collapse = '', formatted = html5_vars$formatted){
+	if(formatted){
+		return(formatted_tag_helper(attr = attr, separate = separate, collapse = collapse, accepts_content = FALSE, tag = 'wbr'))
+	}else{
+		return(empty_tag_helper(attr = attr, separate = separate, collapse = collapse, tag = 'wbr'))
+	}
 }
+

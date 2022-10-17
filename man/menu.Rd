@@ -4,7 +4,13 @@
 \alias{menu}
 \title{Generate the <menu> HTML tag.}
 \usage{
-menu(..., attr = NULL, separate = FALSE, collapse = "")
+menu(
+  ...,
+  attr = NULL,
+  separate = FALSE,
+  collapse = "",
+  formatted = html5_vars$formatted
+)
 }
 \arguments{
 \item{...}{A string or vector of content to pass to the tag.}
@@ -14,12 +20,14 @@ menu(..., attr = NULL, separate = FALSE, collapse = "")
 \item{separate}{TRUE/FALSE, If TRUE, returns separate tags for each item of ...; if FALSE, returns one tag with the items of ... in the tag content.}
 
 \item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
+
+\item{formatted}{TRUE/FALSE, if TRUE, HTML will be generated with indents and new lines for readability at the cost of performance. Controlled by setting the environment variable html5_vars$formatted <- TRUE/FALSE}
 }
 \value{
 A HTML tag string.
 }
 \description{
-The <menu> HTML element is a semantic alternative to ul. It represents an unordered list of items (represented by li elements), each of these represent a link or other command that the user can activate.
+The <menu> HTML element is described in the HTML specification as a semantic alternative to ul, but treated by browsers (and exposed through the accessibility tree) as no different than ul. It represents an unordered list of items (which are represented by li elements).
 }
 \details{
 Learn more at \url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/menu}.

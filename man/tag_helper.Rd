@@ -2,16 +2,9 @@
 % Please edit documentation in R/html5.R
 \name{tag_helper}
 \alias{tag_helper}
-\title{Helper function to generate HTML5 strings}
+\title{Helper function to generate HTML5 strings with end tags}
 \usage{
-tag_helper(
-  ...,
-  attr = NULL,
-  separate = FALSE,
-  collapse = "",
-  accepts_content = TRUE,
-  tag
-)
+tag_helper(..., attr = NULL, separate = FALSE, collapse = "", tag)
 }
 \arguments{
 \item{...}{A string or strings or vector of content to pass to the tag.}
@@ -22,15 +15,13 @@ tag_helper(
 
 \item{collapse}{A string. If NULL, returns a vector the same length as ... instead of collapsing the tags into one string.}
 
-\item{accepts_content}{TRUE/FALSE, if FALSE, does not include any content or end tag (ex: the input tag).}
-
 \item{tag}{A string. The HTML5 tag to return.}
 }
 \value{
 A HTML tag string.
 }
 \description{
-Helper function to generate HTML5 strings
+Helper function to generate HTML5 strings with end tags
 }
 \examples{
 tag_helper(attr = list(class = 'test'), tag = 'a')
